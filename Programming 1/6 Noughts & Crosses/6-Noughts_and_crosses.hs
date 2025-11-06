@@ -29,7 +29,7 @@ input xs = do
   num <- getLine
   let xsUpdate = removal xs (read num :: Int)
 
-  let xsUpdate2 = removal xsUpdate (toInteger botMove)
+  -- let xsUpdate2 = removal xsUpdate (toInteger botMove)
   -- these types confusing as hell man :sob:
 
   if not (null xs)
