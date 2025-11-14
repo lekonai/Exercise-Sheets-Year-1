@@ -1,6 +1,6 @@
 
-data IntTree = Empty | Node Int IntTree IntTree
-  -- deriving Show
+-- data IntTree = Empty | Node Int IntTree IntTree
+--   -- deriving Show
 
 t :: IntTree
 t = Node 4 (Node 2 (Node 1 Empty Empty) (Node 3 Empty Empty)) (Node 5 Empty (Node 6 Empty Empty))
@@ -103,29 +103,33 @@ deleteSmallest (Node i left right) = Node i (deleteSmallest left) right
 
 
 delete :: Int -> IntTree -> IntTree
+-- delete _ Empty = error "This tree is empty"
+-- delete y (Node x l r)
+--     | not (present y (Node x l r))  = error "This number is not within the tree"
+--     | largest (Node x l r) == y     = deleteLargest (Node x l r)
+--     | smallest (Node x l r) == y    = deleteSmallest (Node x l r)
+--     | y < x     = Node x (delete y l) r 
+--     | y > x     = Node x l (delete y r)
+--     | isEmpty l = undefined 
+--     | otherwise = undefined
+
 delete _ Empty = error "This tree is empty"
 delete y (Node x l r)
-    | not (present y (Node x l r))  = error "This number is not within the tree"
-    | largest (Node x l r) == y     = deleteLargest (Node x l r)
-    | smallest (Node x l r) == y    = deleteSmallest (Node x l r)
-    | y < x     = Node x (delete y l) r 
-    | y > x     = Node x l (delete y r)
-    | isEmpty l = undefined 
-    | otherwise = undefined
+  | y < x = Node x (delete y l) r
+  | x < y = Node x l (delete y r)
+  | isEmpty l = r
+  | otherwise = Node (largest l) (deleteLargest l) r
 
--- if y happens to be the smallest amount then you can deploy deleteLargest/Smallest
--- 
-
-sorted :: IntTree -> Bool
-sorted Empty = undefined
-sorted t     = undefined
-  where
-    inRange :: Int -> Int -> IntTree -> Bool
-    inRange = undefined
+-- sorted :: IntTree -> Bool
+-- sorted Empty = True -- true ?? really
+-- sorted t     = inRange minBound maxBound t
+--   where
+--     inRange :: Int -> Int -> IntTree -> Bool
+--     inRange x z Empty = True
+--     inRange x z (Node y l r) = x < y && y < z && inRange x y l && inRange y z r
+-- just check the lecture ong
 
 ------------------------- Exercise 3
-
-{-
 
 instance Show a => Show (Tree a) where
     show = unlines . aux ' ' ' '
@@ -139,26 +143,26 @@ instance Show a => Show (Tree a) where
 
 type IntTree = Tree Int
 
--}
-
 
 ------------------------- Exercise 4
 
-{-
+
 preorder :: Tree a -> [a]
 preorder t = walk [t]
  where
-  walk = undefined
+  walk [] = []
+  walk (Empty : ts) = walk ts
+  walk (Node x l r : ts) = x : walk (l:r:ts)
 
-inorder :: Tree a -> [a]
-inorder = undefined
+-- inorder :: Tree a -> [a]
+-- inorder = undefined
 
-postorder :: Tree a -> [a]
-postorder = undefined
+-- postorder :: Tree a -> [a]
+-- postorder = undefined
 
-breadthfirst :: Tree a -> [a]
-breadthfirst = undefined
--}
+-- breadthfirst :: Tree a -> [a]
+-- breadthfirst = undefined
+
 
 ------------------------- Exercise 5
 
