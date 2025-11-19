@@ -71,25 +71,38 @@ disconnect ni nj ms
 add :: Party -> Event -- so this is Party -> Game -> Game
 add [] (Game m n p ps) = Game m n p ps
 add (x:xs) (Game m n p ps)
-  | not (x `elem` p) = add xs (Game m n (insert x p) ps)
-  | otherwise = add xs (Game m n p ps)
+  | not (x `elem` p)  = add xs (Game m n (insert x p) ps)
+  | otherwise         = add xs (Game m n p ps)
 
 addAt :: Node -> Party -> Event
--- addAt = undefined
--- addAt _ [] (Game m n p ps) = Game m n p ps
--- addAt nd pi (Game m n p ps) = Game m n pi (insertAt nd pi ps)
+-- terminal example: addAt 1 ["Dijkstra"] (testGame 0)
+addAt _ [] (Game m n pj ps) = Game m n pj ps -- practically an empty case 
+addAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 0 nd pi ps)
 
+goToLocation :: Int -> Node -> Party -> [Party] -> [Party]
+goToLocation _ _ [] (p:ps) = p:ps
+goToLocation o nd pi (p:ps)
+  | nd == 0 && o == 0 = (p ++ pi) : ps
+  | nd == 0 && o == 1 = (p \\ pi) : ps
+  | otherwise         = p : goToLocation o (nd - 1) pi ps
+
+-- terminal example: addHere ["Dijkstra"] (testGame 0)
 addHere :: Party -> Event
-addHere = undefined
+addHere pi (Game m n pj ps) = addAt n pi (Game m n pj ps)
 
+-- terminal example: remove ["Brouwer","Russell"] (testGame 0)
 remove :: Party -> Event
-remove = undefined
+-- remove [] (Game m n p ps) = Game m n p ps -- just in case, will commit this
+-- remove (x:xs) (Game m n p ps) = remove xs (Game m n (delete x p) ps)
+remove pi (Game m n pj ps) = Game m n (pj \\ pi) ps
 
+-- terminal example: removeAt 1 ["Heyting"] (testGame 0)
 removeAt :: Node -> Party -> Event
-removeAt = undefined
+-- removeAt nd [] (Game m n pj ps) = Game m n pj ps -- this case isn't necessary
+removeAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 1 nd pi ps)
 
 removeHere :: Party -> Event
-removeHere = undefined
+removeHere pi (Game m n pj ps) = removeAt n pi (Game m n pj ps)
 
 
 ------------------------- Assignment 2: Dialogues
