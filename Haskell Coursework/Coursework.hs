@@ -123,7 +123,7 @@ testDialogue = Branch ( isAtZero )
     , ("Could I get a pint?",    Choice "Brouwer: Of course. Which would you like?"
       [ ("The Segmalt.",     Action "" id)
       , ("The Null Pinter.", Action "" id)]
-      )
+      )Branch
     , ("Will you join us on a dangerous adventure?", Action "Brouwer: Of course." (add ["Brouwer"] . removeHere ["Brouwer"]))
     ]
   )
@@ -133,11 +133,20 @@ testDialogue = Branch ( isAtZero )
 
 
 dialogue :: Game -> Dialogue -> IO Game
-dialogue (Game m n p ps) Branch = undefined
+-- dialogue (Game mi ni pi psi) Action s (Game mj nj pj psj) =
+--   do
+--     putStrLn s
+--     return (Game mj nj pj psj)
 
-dialogue (Game m n p ps) Choice = undefined
+-- dialogue (Game m n p ps) Branch d1 d2 = undefined
 
-dialogue (Game m n p ps) Action = undefined
+-- dialogue (Game m n p ps) Choice = undefined
+
+
+-- dialogue Over (findDialogue []) = 
+--   do 
+--     putStrLn "There is nothing we can do."
+--     return Over
 
 -- Action
 -- Branch
