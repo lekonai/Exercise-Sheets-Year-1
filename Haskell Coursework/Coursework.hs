@@ -133,7 +133,15 @@ testDialogue = Branch ( isAtZero )
 
 
 dialogue :: Game -> Dialogue -> IO Game
-dialogue = undefined
+dialogue (Game m n p ps) Branch = undefined
+
+dialogue (Game m n p ps) Choice = undefined
+
+dialogue (Game m n p ps) Action = undefined
+
+-- Action
+-- Branch
+-- Choice
 
 findDialogue :: Party -> Dialogue
 findDialogue = undefined
