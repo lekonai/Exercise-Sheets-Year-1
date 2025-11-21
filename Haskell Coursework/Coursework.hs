@@ -123,7 +123,7 @@ testDialogue = Branch ( isAtZero )
     , ("Could I get a pint?",    Choice "Brouwer: Of course. Which would you like?"
       [ ("The Segmalt.",     Action "" id)
       , ("The Null Pinter.", Action "" id)]
-      )Branch
+      )
     , ("Will you join us on a dangerous adventure?", Action "Brouwer: Of course." (add ["Brouwer"] . removeHere ["Brouwer"]))
     ]
   )
@@ -133,28 +133,48 @@ testDialogue = Branch ( isAtZero )
 
 
 dialogue :: Game -> Dialogue -> IO Game
--- dialogue (Game mi ni pi psi) Action s (Game mj nj pj psj) =
---   do
---     putStrLn s
---     return (Game mj nj pj psj)
+-- getting everything right took SO long, i had the right idea from the start and somehow it didn't work til now.
+-- fuck ts.... type shit.
 
--- dialogue (Game m n p ps) Branch d1 d2 = undefined
+dialogue g (Action st ev) =
+  do
+    putStrLn st
+    return (ev g)
 
--- dialogue (Game m n p ps) Choice = undefined
+dialogue g (Branch c di dj) = 
+  do
+    if c == True
+      then
+        
+
+dialogue g (Choice sti chs) = 
+  do
+    putStrLn sti
+    if (not (null chs)) == True
+      then
+        putStrLn (fst head chs)
+        if (not (null chs)) == True
+          then
+            dialogue g (Choice sti (tail chs))
+        else
+          putStrLn prompt
+    else
+      return g
+        
+
 
 
 -- dialogue Over (findDialogue []) = 
 --   do 
---     putStrLn "There is nothing we can do."
+--     putStrLn line0
 --     return Over
 
--- Action
--- Branch
--- Choice
+functionFunction = 
+  do
+    putStrLn line0
 
 findDialogue :: Party -> Dialogue
 findDialogue = undefined
-
 
 
 ------------------------- Assignment 3: The game loop
@@ -365,4 +385,3 @@ theDialogues = let
   , ( ["Bertrand Russell","Haskell Curry","Luitzen Brouwer"] , Branch ((==7).here) (end "Road trip! Road trip! Road trip!") (end "Let's head for Error!")
     )
   ]
-
