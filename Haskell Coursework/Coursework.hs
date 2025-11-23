@@ -1,4 +1,5 @@
 import Data.List
+import Data.Char
 ------------------------- Merge sort
 
 merge :: Ord a => [a] -> [a] -> [a]
@@ -15,7 +16,7 @@ msort [x] = [x]
 msort xs  = msort (take n xs) `merge` msort (drop n xs)
   where
     n = length xs `div` 2
-    
+
 ------------------------- Game world types
 
 type Character = String
@@ -41,7 +42,7 @@ testGame i = Game [(0,1)] i ["Russell"] [[],["Brouwer","Heyting"]]
 -- terminal example: connected [(1,2), (2,3), (4,6)] 2
 connected :: Map -> Node -> [Node]
 connected [] n = []
-connected (m:ms) n 
+connected (m:ms) n
   | fst m == n    = snd m : connected ms n
   | snd m == n    = fst m : connected ms n
   | otherwise     = connected ms n
@@ -50,7 +51,7 @@ connected (m:ms) n
 -- connect = undefined
 -- terminal example: connect 2 7 [(1,2), (2,3), (3,6), (4,6)]
 connect :: Node -> Node -> Map -> Map
-connect ni nj ms 
+connect ni nj ms
   | (ni, nj) `elem` ms || (nj, ni) `elem` ms  = ms
   | otherwise                                 = connecting ni nj ms
     where
@@ -58,12 +59,12 @@ connect ni nj ms
       connecting ni nj (m:ms) = msort (m : (ni, nj) : ms)
 
 disconnect :: Node -> Node -> Map -> Map
-disconnect ni nj ms 
+disconnect ni nj ms
   | (ni, nj) `elem` ms || (nj, ni) `elem` ms  = disconnecting ni nj ms
   | otherwise                                 = ms
     where
       disconnecting :: Node -> Node -> Map -> Map
-      disconnecting ni nj (m:ms) 
+      disconnecting ni nj (m:ms)
         | ((fst m) == ni && (snd m) == nj) || ((snd m) == ni && (fst m) == nj)  = ms
         | otherwise                                                             = m : disconnecting ni nj ms
 
@@ -76,7 +77,7 @@ add (x:xs) (Game m n p ps)
 
 addAt :: Node -> Party -> Event
 -- terminal example: addAt 1 ["Dijkstra"] (testGame 0)
-addAt _ [] (Game m n pj ps) = Game m n pj ps -- practically an empty case 
+addAt _ [] (Game m n pj ps) = Game m n pj ps -- practically an empty case
 addAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 0 nd pi ps)
 
 goToLocation :: Int -> Node -> Party -> [Party] -> [Party]
@@ -136,45 +137,75 @@ dialogue :: Game -> Dialogue -> IO Game
 -- getting everything right took SO long, i had the right idea from the start and somehow it didn't work til now.
 -- fuck ts.... type shit.
 
-dialogue g (Action st ev) =
+dialogue g (Action st ev) = 
   do
     putStrLn st
     return (ev g)
+  -- this one's easy, this should be the entire implementation really
 
-dialogue g (Branch c di dj) = 
+dialogue g (Branch c di dj) =
   do
-    if c == True
+    if c g == True
       then
-        
-
-dialogue g (Choice sti chs) = 
-  do
-    putStrLn sti
-    if (not (null chs)) == True
-      then
-        putStrLn (fst head chs)
-        if (not (null chs)) == True
-          then
-            dialogue g (Choice sti (tail chs))
-        else
-          putStrLn prompt
+        dialogue g di
     else
-      return g
-        
+      dialogue g dj
 
+-- first implementation
+-- dialogue g (Choice sti chs) = do
+--   if length sti > 2 && not (isDigit (sti !! 0)) -- I don't imagine there'll be any dialogue under 3
+--     then do
+--       putStrLn sti
+--       dialogue g (Choice "0" chs)
+--   else do
+--     putStrLn ((show ((read sti::Int) + 1)) ++ " " ++ (fst (head chs)))
+--     if not (null (tail chs))
+--       then
+--         dialogue g (Choice (show ((read sti::Int) + 1)) (tail chs))
+--     else do
+--       putStrLn prompt
+--       x <- getLine
+--       if (read x::Int) > length chs || (read x::Int) < 1
+--         then
+--           dialogue g (snd (chs !! ((read x::Int) - 1)))
+--       else do
+--         putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
+--         return g
 
-
--- dialogue Over (findDialogue []) = 
---   do 
---     putStrLn line0
---     return Over
-
-functionFunction = 
-  do
-    putStrLn line0
-
+-- second implementation
+dialogue g (Choice sti chs) = do
+  if length sti > 2 && not (isDigit (sti !! 0)) -- I don't imagine there'll be any dialogue under 3
+    then do
+      putStrLn sti
+      dialogue g (Choice "0" chs)
+  else do
+    if not ((read sti::Int) >= length chs)
+      then do
+        putStrLn ((show ((read sti::Int) + 1)) ++ " " ++ (fst (chs !! ((read sti::Int)))))
+        dialogue g (Choice (show ((read sti::Int) + 1)) chs)
+    else do
+      if length chs == 0
+        then
+          return g
+      else do
+        putStr (prompt ++ " ")
+        x <- getLine
+        if (read x::Int) <= length chs && (read x::Int) > 0
+          then
+            dialogue g (snd (chs !! ((read x::Int) - 1)))
+        else do
+          putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
+          return g
+      
 findDialogue :: Party -> Dialogue
-findDialogue = undefined
+findDialogue p = searchTheDialogues p theDialogues
+  where
+    searchTheDialogues :: Party -> [(Party, Dialogue)] -> Dialogue
+    searchTheDialogues [] _   = Action line0 id
+    searchTheDialogues p []   = Action line0 id
+    searchTheDialogues p xs
+      | null ((fst (head xs)) \\ p)   = snd (head xs)
+      | otherwise                     = searchTheDialogues p (tail xs)
 
 
 ------------------------- Assignment 3: The game loop
@@ -278,7 +309,7 @@ theDialogues :: [(Party,Dialogue)]
 theDialogues = let
   always _ = True
   end str  = Choice str []
-  
+
   isconn  _ _  Over           = False
   isconn  i j (Game m _ _ _ ) = elem i (connected m j)
 
