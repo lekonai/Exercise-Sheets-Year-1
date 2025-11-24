@@ -70,15 +70,17 @@ disconnect ni nj ms
 
 -- terminal example: add ["Dijkstra", "Norvig"] (testGame 0)
 add :: Party -> Event -- so this is Party -> Game -> Game
-add [] (Game m n p ps) = Game m n p ps
+add _ Over              = Over
+add [] (Game m n p ps)  = Game m n p ps
 add (x:xs) (Game m n p ps)
   | not (x `elem` p)  = add xs (Game m n (insert x p) ps)
   | otherwise         = add xs (Game m n p ps)
 
 addAt :: Node -> Party -> Event
 -- terminal example: addAt 1 ["Dijkstra"] (testGame 0)
-addAt _ [] (Game m n pj ps) = Game m n pj ps -- practically an empty case
-addAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 0 nd pi ps)
+addAt _ _ Over                = Over
+addAt _ [] (Game m n pj ps)   = Game m n pj ps -- practically an empty case
+addAt nd pi (Game m n pj ps)  = Game m n pj (goToLocation 0 nd pi ps)
 
 goToLocation :: Int -> Node -> Party -> [Party] -> [Party]
 goToLocation _ _ [] (p:ps) = p:ps
@@ -95,15 +97,18 @@ addHere pi (Game m n pj ps) = addAt n pi (Game m n pj ps)
 remove :: Party -> Event
 -- remove [] (Game m n p ps) = Game m n p ps -- just in case, will commit this
 -- remove (x:xs) (Game m n p ps) = remove xs (Game m n (delete x p) ps)
+remove pi Over             = Over
 remove pi (Game m n pj ps) = Game m n (pj \\ pi) ps
 
 -- terminal example: removeAt 1 ["Heyting"] (testGame 0)
 removeAt :: Node -> Party -> Event
 -- removeAt nd [] (Game m n pj ps) = Game m n pj ps -- this case isn't necessary
+removeAt _ _ Over               = Over
 removeAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 1 nd pi ps)
 
 removeHere :: Party -> Event
-removeHere pi (Game m n pj ps) = removeAt n pi (Game m n pj ps)
+removeHere _ Over               = Over
+removeHere pi (Game m n pj ps)  = removeAt n pi (Game m n pj ps)
 
 
 ------------------------- Assignment 2: Dialogues
@@ -134,14 +139,11 @@ testDialogue = Branch ( isAtZero )
 
 
 dialogue :: Game -> Dialogue -> IO Game
--- getting everything right took SO long, i had the right idea from the start and somehow it didn't work til now.
--- fuck ts.... type shit.
 
 dialogue g (Action st ev) = 
   do
     putStrLn st
     return (ev g)
-  -- this one's easy, this should be the entire implementation really
 
 dialogue g (Branch c di dj) =
   do
@@ -150,27 +152,6 @@ dialogue g (Branch c di dj) =
         dialogue g di
     else
       dialogue g dj
-
--- first implementation
--- dialogue g (Choice sti chs) = do
---   if length sti > 2 && not (isDigit (sti !! 0)) -- I don't imagine there'll be any dialogue under 3
---     then do
---       putStrLn sti
---       dialogue g (Choice "0" chs)
---   else do
---     putStrLn ((show ((read sti::Int) + 1)) ++ " " ++ (fst (head chs)))
---     if not (null (tail chs))
---       then
---         dialogue g (Choice (show ((read sti::Int) + 1)) (tail chs))
---     else do
---       putStrLn prompt
---       x <- getLine
---       if (read x::Int) > length chs || (read x::Int) < 1
---         then
---           dialogue g (snd (chs !! ((read x::Int) - 1)))
---       else do
---         putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
---         return g
 
 -- second implementation
 dialogue g (Choice sti chs) = do
@@ -204,7 +185,7 @@ findDialogue p = searchTheDialogues p theDialogues
     searchTheDialogues [] _   = Action line0 id
     searchTheDialogues p []   = Action line0 id
     searchTheDialogues p xs
-      | null ((fst (head xs)) \\ p)   = snd (head xs)
+      | all (`elem` (fst (head xs))) p  = snd (head xs)
       | otherwise                     = searchTheDialogues p (tail xs)
 
 
