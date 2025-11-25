@@ -155,7 +155,7 @@ dialogue g (Branch c di dj) =
 
 -- second implementation
 dialogue g (Choice sti chs) = do
-  if length sti > 2 && not (isDigit (sti !! 0)) -- I don't imagine there'll be any dialogue under 3
+  if length sti > 2 && not (isDigit (sti !! 0)) -- this is a very naff input
     then do
       putStrLn sti
       dialogue g (Choice "0" chs)
@@ -199,7 +199,41 @@ line5 = "What will you do?"
 
 
 step :: Game -> IO Game
-step = undefined
+step (Game m n p ps) = do
+  putStrLn (line1 ++ (theLocations !! n))
+  
+  -- travel options
+  putStrLn line2
+  print (connected m n)
+
+
+  
+  -- end of travel options
+  --
+  -- with you are (dialogue options)
+  putStrLn line3
+
+
+
+  -- end of dialogue options
+  --
+  -- who you can see options
+  putStrLn line4
+
+
+
+  -- end of who you can see options
+  --
+  -- decision
+  putStrLn line5
+  putStr  (prompt ++ " ")
+
+
+  -- end of decision
+  return (Game m n p ps)
+
+
+
 
 game :: IO ()
 game = undefined
