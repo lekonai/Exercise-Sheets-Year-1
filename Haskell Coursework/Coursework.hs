@@ -197,41 +197,53 @@ line3 = "With you are:"
 line4 = "You can see:"
 line5 = "What will you do?"
 
+type Counter = Int
+data Decision = Trv Counter Int | Dia Counter Int | Tlk Counter Int 
+type Stage = Int
+
+-- decisionFunction :: Stage -> Game -> Counter -> [Decision] -> [Decision]
+-- decisionFunction s (Game m _ p ps) c ds = 
+--   | 
+
+-- tokConns :: [Node] -> Counter -> [Decision]
+-- tokConns (m:ms) c ds = tokConns ms (c + 1) (ds : c m)
+
+-- tokParty
+
+-- tokSee
 
 step :: Game -> IO Game
 step (Game m n p ps) = do
-  putStrLn (line1 ++ (theLocations !! n))
+  -- let decs <- decisionFunction 0 (Game m n p ps) 0 []
+  putStrLn (line1 ++ (theDescriptions !! n))
   
   -- travel options
   putStrLn line2
   print (connected m n)
-
-
   
   -- end of travel options
   --
   -- with you are (dialogue options)
   putStrLn line3
-
-
+  print p
 
   -- end of dialogue options
   --
   -- who you can see options
   putStrLn line4
-
-
-
+  print (ps !! n)
   -- end of who you can see options
   --
   -- decision
   putStrLn line5
   putStr  (prompt ++ " ")
-
+  x <- getLine -- get decision
+  
 
   -- end of decision
   return (Game m n p ps)
 
+-- paste :: [a] -> a
 
 
 
