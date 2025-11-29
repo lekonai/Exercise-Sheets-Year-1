@@ -208,7 +208,7 @@ type Stage = Int
 -- REMEMBER TO REMOVE THE LITTLE PLACEHOLDER TEXTS.
 
 
--- consider removing counter when refactoring it
+-- NON IO VERSIONS
 -- bring it all together
 decisionFunction :: Game -> [Decision] -> [Decision]
 -- decisionFunction (Game m n p ps) c ds = (tokSee (ps !! n) c (tokParty p p c (tokConns (connected m n) 0 [])))
@@ -233,8 +233,43 @@ tokSee [] pj c ds = ds
 tokSee pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokSee (tail pi) pj 0 ds)
 -- tokenisers
 
--- allDecisionIO :: Game -> IO [Decision]
--- allDecisionIO g = enumerator (decisionFunction g []) 0
+-- decisionIOFunction :: Game -> IO [Decision]
+-- decisionIOFunction (Game m n p ps) = do
+--   conns <- tokIOConns (connected m n) 0 
+--   party <- tokIOParty p p 0
+--   see <- tokIOSee (ps !! n) (ps !! n) 0
+--   return (conns ++ party ++ see)
+
+-- tokIOConns :: [Node] -> Counter -> IO [Decision]
+-- tokIOConns [] c = return []
+-- tokIOConns (m:ms) c = do
+--   recurFunc <- tokIOConns ms 0
+--   return ( Trv 0 m : recurFunc )
+
+-- tokIOParty :: Party -> Party -> Counter -> IO [Decision]
+-- tokIOParty [] pj c = return []
+-- tokIOParty pi pj c = do
+--   recurFunc <- tokIOParty (tail pi) pj 0
+--   return (Dia c (fromJust $ elemIndex (head pi) pj) : recurFunc)
+
+-- tokIOSee :: Party -> Party -> Counter -> IO [Decision]
+-- tokIOSee [] pj c = return []
+-- tokIOSee pi pj c = do
+--   recurFunc <- tokIOSee (tail pi) pj 0
+--   return (Tlk c (fromJust $ elemIndex (head pi) pj) : recurFunc)
+
+enumeratorIO :: [Decision] -> Counter -> IO [Decision]
+enumeratorIO [] cnt = return []
+enumeratorIO (( Trv c i ): ds) cnt = do
+  recurFunc <- enumeratorIO ds (cnt + 1)
+  return (Trv (cnt + 1) i : recurFunc)
+enumeratorIO (( Dia c i ): ds) cnt = do
+  recurFunc <- enumeratorIO ds (cnt + 1)
+  return (Dia (cnt + 1) i : recurFunc)
+enumeratorIO (( Tlk c i ): ds) cnt = do
+  recurFunc <- enumeratorIO ds (cnt + 1)
+  return (Tlk (cnt + 1) i : recurFunc)
+
 
 step :: Game -> IO Game
 step (Game m n p ps) = do
@@ -247,6 +282,8 @@ step (Game m n p ps) = do
   putStrLn line2
   print (connected m n)
   
+  theList <- enumeratorIO (decisionFunction (Game m n p ps) []) 0
+  print theList
   -- end of travel options
   --
   -- with you are (dialogue options)
@@ -256,7 +293,7 @@ step (Game m n p ps) = do
   -- end of dialogue options
   --
   -- who you can see options (extra dialogue options, but will be approached differently)
-  putStrLn line4
+  putStrLn line4 
   print (ps !! n)
   -- end of who you can see options
   --
