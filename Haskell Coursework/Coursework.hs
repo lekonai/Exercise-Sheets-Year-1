@@ -1,3 +1,4 @@
+import Data.Maybe
 import Data.List
 import Data.Char
 ------------------------- Merge sort
@@ -199,25 +200,50 @@ line5 = "What will you do?"
 
 type Counter = Int
 data Decision = Trv Counter Int | Dia Counter Int | Tlk Counter Int 
+instance Show Decision where
+  show (Trv cnt int) = "Travel to: " ++ show cnt ++ " " ++ show (theLocations !! int)
+  show (Dia cnt int) = "Interact with (party): " ++ show cnt ++ " " ++ show int
+  show (Tlk cnt int) = "You can see (nearby): " ++ show cnt ++ " " ++ show int
 type Stage = Int
+-- REMEMBER TO REMOVE THE LITTLE PLACEHOLDER TEXTS.
 
--- decisionFunction :: Stage -> Game -> Counter -> [Decision] -> [Decision]
--- decisionFunction s (Game m _ p ps) c ds = 
---   | 
 
--- tokConns :: [Node] -> Counter -> [Decision]
--- tokConns (m:ms) c ds = tokConns ms (c + 1) (ds : c m)
+-- consider removing counter when refactoring it
+-- bring it all together
+decisionFunction :: Game -> [Decision] -> [Decision]
+-- decisionFunction (Game m n p ps) c ds = (tokSee (ps !! n) c (tokParty p p c (tokConns (connected m n) 0 [])))
+decisionFunction (Game m n p ps) ds = (tokConns (connected m n) 0 (tokParty p p 0 (tokSee (ps !! n) (ps !! n) 0 [])))
 
--- tokParty
+enumerator :: [Decision] -> Counter -> [Decision]
+enumerator [] cnt = []
+enumerator ((Trv c i):ds) cnt = (Trv (cnt + 1) i) : (enumerator ds (cnt + 1))
+enumerator ((Dia c i):ds) cnt = (Dia (cnt + 1) i) : (enumerator ds (cnt + 1))
+enumerator ((Tlk c i):ds) cnt = (Tlk (cnt + 1) i) : (enumerator ds (cnt + 1))
 
--- tokSee
+tokConns :: [Node] -> Counter -> [Decision] -> [Decision]
+tokConns [] c ds = ds
+tokConns (m:ms) c ds = (Trv c m) : (tokConns ms 0 (ds))
+
+tokParty :: Party -> Party -> Counter -> [Decision] -> [Decision]
+tokParty [] pj c ds = ds
+tokParty pi pj c ds = (Dia c (fromJust $ elemIndex (head pi) pj)) : (tokParty (tail pi) pj 0 ds)
+
+tokSee :: Party -> Party -> Counter -> [Decision] -> [Decision]
+tokSee [] pj c ds = ds
+tokSee pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokSee (tail pi) pj 0 ds)
+-- tokenisers
+
+-- allDecisionIO :: Game -> IO [Decision]
+-- allDecisionIO g = enumerator (decisionFunction g []) 0
 
 step :: Game -> IO Game
 step (Game m n p ps) = do
   -- let decs <- decisionFunction 0 (Game m n p ps) 0 []
   putStrLn (line1 ++ (theDescriptions !! n))
-  
+  -- DONE
+  --
   -- travel options
+  
   putStrLn line2
   print (connected m n)
   
@@ -229,7 +255,7 @@ step (Game m n p ps) = do
 
   -- end of dialogue options
   --
-  -- who you can see options
+  -- who you can see options (extra dialogue options, but will be approached differently)
   putStrLn line4
   print (ps !! n)
   -- end of who you can see options
@@ -242,10 +268,6 @@ step (Game m n p ps) = do
 
   -- end of decision
   return (Game m n p ps)
-
--- paste :: [a] -> a
-
-
 
 game :: IO ()
 game = undefined
