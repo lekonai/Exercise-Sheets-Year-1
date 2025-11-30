@@ -1,4 +1,6 @@
+import Data.Maybe
 import Data.List
+import Data.Char
 ------------------------- Merge sort
 
 merge :: Ord a => [a] -> [a] -> [a]
@@ -15,7 +17,7 @@ msort [x] = [x]
 msort xs  = msort (take n xs) `merge` msort (drop n xs)
   where
     n = length xs `div` 2
-    
+
 ------------------------- Game world types
 
 type Character = String
@@ -41,7 +43,7 @@ testGame i = Game [(0,1)] i ["Russell"] [[],["Brouwer","Heyting"]]
 -- terminal example: connected [(1,2), (2,3), (4,6)] 2
 connected :: Map -> Node -> [Node]
 connected [] n = []
-connected (m:ms) n 
+connected (m:ms) n
   | fst m == n    = snd m : connected ms n
   | snd m == n    = fst m : connected ms n
   | otherwise     = connected ms n
@@ -50,7 +52,7 @@ connected (m:ms) n
 -- connect = undefined
 -- terminal example: connect 2 7 [(1,2), (2,3), (3,6), (4,6)]
 connect :: Node -> Node -> Map -> Map
-connect ni nj ms 
+connect ni nj ms
   | (ni, nj) `elem` ms || (nj, ni) `elem` ms  = ms
   | otherwise                                 = connecting ni nj ms
     where
@@ -58,26 +60,28 @@ connect ni nj ms
       connecting ni nj (m:ms) = msort (m : (ni, nj) : ms)
 
 disconnect :: Node -> Node -> Map -> Map
-disconnect ni nj ms 
+disconnect ni nj ms
   | (ni, nj) `elem` ms || (nj, ni) `elem` ms  = disconnecting ni nj ms
   | otherwise                                 = ms
     where
       disconnecting :: Node -> Node -> Map -> Map
-      disconnecting ni nj (m:ms) 
+      disconnecting ni nj (m:ms)
         | ((fst m) == ni && (snd m) == nj) || ((snd m) == ni && (fst m) == nj)  = ms
         | otherwise                                                             = m : disconnecting ni nj ms
 
 -- terminal example: add ["Dijkstra", "Norvig"] (testGame 0)
 add :: Party -> Event -- so this is Party -> Game -> Game
-add [] (Game m n p ps) = Game m n p ps
+add _ Over              = Over
+add [] (Game m n p ps)  = Game m n p ps
 add (x:xs) (Game m n p ps)
   | not (x `elem` p)  = add xs (Game m n (insert x p) ps)
   | otherwise         = add xs (Game m n p ps)
 
 addAt :: Node -> Party -> Event
 -- terminal example: addAt 1 ["Dijkstra"] (testGame 0)
-addAt _ [] (Game m n pj ps) = Game m n pj ps -- practically an empty case 
-addAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 0 nd pi ps)
+addAt _ _ Over                = Over
+addAt _ [] (Game m n pj ps)   = Game m n pj ps -- practically an empty case
+addAt nd pi (Game m n pj ps)  = Game m n pj (goToLocation 0 nd pi ps)
 
 goToLocation :: Int -> Node -> Party -> [Party] -> [Party]
 goToLocation _ _ [] (p:ps) = p:ps
@@ -94,15 +98,18 @@ addHere pi (Game m n pj ps) = addAt n pi (Game m n pj ps)
 remove :: Party -> Event
 -- remove [] (Game m n p ps) = Game m n p ps -- just in case, will commit this
 -- remove (x:xs) (Game m n p ps) = remove xs (Game m n (delete x p) ps)
+remove pi Over             = Over
 remove pi (Game m n pj ps) = Game m n (pj \\ pi) ps
 
 -- terminal example: removeAt 1 ["Heyting"] (testGame 0)
 removeAt :: Node -> Party -> Event
 -- removeAt nd [] (Game m n pj ps) = Game m n pj ps -- this case isn't necessary
+removeAt _ _ Over               = Over
 removeAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 1 nd pi ps)
 
 removeHere :: Party -> Event
-removeHere pi (Game m n pj ps) = removeAt n pi (Game m n pj ps)
+removeHere _ Over               = Over
+removeHere pi (Game m n pj ps)  = removeAt n pi (Game m n pj ps)
 
 
 ------------------------- Assignment 2: Dialogues
@@ -133,11 +140,54 @@ testDialogue = Branch ( isAtZero )
 
 
 dialogue :: Game -> Dialogue -> IO Game
-dialogue = undefined
 
+dialogue g (Action st ev) = 
+  do
+    putStrLn st
+    return (ev g)
+
+dialogue g (Branch c di dj) =
+  do
+    if c g == True
+      then
+        dialogue g di
+    else
+      dialogue g dj
+
+-- second implementation
+dialogue g (Choice sti chs) = do
+  if length sti > 2 && not (isDigit (sti !! 0)) -- this is a very naff input
+    then do
+      putStrLn sti
+      dialogue g (Choice "0" chs)
+  else do
+    if not ((read sti::Int) >= length chs)
+      then do
+        putStrLn ((show ((read sti::Int) + 1)) ++ " " ++ (fst (chs !! ((read sti::Int)))))
+        dialogue g (Choice (show ((read sti::Int) + 1)) chs)
+    else do
+      if length chs == 0
+        then
+          return g
+      else do
+        putStr (prompt ++ " ")
+        x <- getLine
+        if (read x::Int) <= length chs && (read x::Int) > 0
+          then
+            dialogue g (snd (chs !! ((read x::Int) - 1)))
+        else do
+          putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
+          return g
+      
 findDialogue :: Party -> Dialogue
-findDialogue = undefined
-
+findDialogue p = searchTheDialogues p theDialogues
+  where
+    searchTheDialogues :: Party -> [(Party, Dialogue)] -> Dialogue
+    searchTheDialogues [] _   = Action line0 id
+    searchTheDialogues p []   = Action line0 id
+    searchTheDialogues p xs
+      | all (`elem` (fst (head xs))) p    = snd (head xs)
+      | otherwise                         = searchTheDialogues p (tail xs)
 
 
 ------------------------- Assignment 3: The game loop
@@ -148,12 +198,137 @@ line3 = "With you are:"
 line4 = "You can see:"
 line5 = "What will you do?"
 
+type Counter = Int
+data Decision = Trv Counter Int | Dia Counter Int | Tlk Counter Int 
+instance Show Decision where
+  show (Trv cnt int) = show cnt ++ " " ++ show (theLocations !! int)
+  show (Dia cnt int) = show cnt ++ " " ++ show int
+  show (Tlk cnt int) = show cnt ++ " " ++ show int
+
+decisionFunction :: Game -> [Decision] -> [Decision]
+decisionFunction (Game m n p ps) ds = (tokConns (connected m n) 0 (tokParty p p 0 (tokSee (ps !! n) (ps !! n) 0 [])))
+
+tokConns :: [Node] -> Counter -> [Decision] -> [Decision]
+tokConns [] c ds = ds
+tokConns (m:ms) c ds = (Trv c m) : (tokConns ms 0 (ds))
+
+tokParty :: Party -> Party -> Counter -> [Decision] -> [Decision]
+tokParty [] pj c ds = ds
+tokParty pi pj c ds = (Dia c (fromJust $ elemIndex (head pi) pj)) : (tokParty (tail pi) pj 0 ds)
+
+tokSee :: Party -> Party -> Counter -> [Decision] -> [Decision]
+tokSee [] pj c ds = ds
+tokSee pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokSee (tail pi) pj 0 ds)
+
+enumerator :: [Decision] -> Counter -> [Decision]
+enumerator [] cnt = []
+enumerator ((Trv c i):ds) cnt = (Trv (cnt + 1) i) : (enumerator ds (cnt + 1))
+enumerator ((Dia c i):ds) cnt = (Dia (cnt + 1) i) : (enumerator ds (cnt + 1))
+enumerator ((Tlk c i):ds) cnt = (Tlk (cnt + 1) i) : (enumerator ds (cnt + 1))
+
+printingProcess :: Game -> Bool -> Bool -> Bool -> [Decision] -> IO ()
+printingProcess (Game m n p ps) dtr ddi dtl [] = return ()
+printingProcess (Game m n p ps) dtr ddi dtl (d:ds) = do
+  case d of
+    Trv c i -> do
+      if not dtr
+        then do
+          putStrLn line2
+          putStrLn (" " ++ show (Trv c i))
+          printingProcess (Game m n p ps) True ddi dtl ds 
+      else do
+        putStrLn (" " ++ show (Trv c i))
+        printingProcess (Game m n p ps) dtr ddi dtl ds 
+    Dia c i -> do
+      if not ddi
+        then do
+          putStrLn line3
+          putStrLn (" " ++ show c ++ " " ++ show (p !! i))
+          printingProcess (Game m n p ps) dtr True dtl ds 
+      else do
+        putStrLn (" " ++ show c ++ " " ++ show (p !! i))
+        printingProcess (Game m n p ps) dtr ddi dtl ds 
+    Tlk c i -> do
+      if not dtl
+        then do
+          putStrLn line4
+          putStrLn (" " ++ show c ++ " " ++ show ((ps !! n) !! i))
+          printingProcess (Game m n p ps) dtr ddi True ds 
+      else do
+        putStrLn (" " ++ show c ++ " " ++ show ((ps !! n) !! i))
+        printingProcess (Game m n p ps) dtr ddi dtl ds 
+
+seek :: Int -> [Decision] -> Game -> IO Game
+seek x [] (Game m n p ps) = return Over
+seek x (d:ds) (Game m n p ps) = do
+  case d of
+    Trv c i ->
+      if c == x
+        then
+          return (Game m i p ps)
+      else
+        seek x ds (Game m n p ps)
+    Dia c i ->
+      if c == x
+        then 
+          dialogue (Game m n p ps) (findDialogue [(p !! i)])
+      else
+        seek x ds (Game m n p ps)
+    Tlk c i ->
+      if c == x
+        then
+          dialogue (Game m n p ps) (findDialogue [((ps !! n) !! i)])
+      else
+        seek x ds (Game m n p ps)
+
+multInput :: String -> [Int]
+multInput x = msort (map read (words x) :: [Int])
+
+multSeek :: [Int] -> [Decision] -> Game -> [String]
+multSeek [] _ _ = []
+multSeek (x:xs) (d:ds) (Game m n p ps) = do
+  case d of
+    Trv c i ->
+      multSeek (x:xs) ds (Game m n p ps)
+    Dia c i ->
+      if c == x
+        then 
+          (p !! i) : multSeek (xs) ds (Game m n p ps) -- IMPLEMENT
+      else
+        multSeek (x:xs) ds (Game m n p ps)
+    Tlk c i ->
+      if c == x
+        then
+          ((ps !! n) !! i) : multSeek (xs) ds (Game m n p ps) -- IMPLEMENT
+      else
+        multSeek (x:xs) ds (Game m n p ps)
 
 step :: Game -> IO Game
-step = undefined
+step (Game m n p ps) = do
+  -- let decs <- decisionFunction 0 (Game m n p ps) 0 []
+  putStrLn (line1 ++ (theDescriptions !! n))
+  printingProcess (Game m n p ps) False False False (enumerator (decisionFunction (Game m n p ps) []) 0)
+  putStrLn line5
+  putStr  (prompt ++ " ")
+  x <- getLine -- get decision
+  endGame <- if length x == 1 
+    then (seek (read x::Int) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps))
+    else dialogue (Game m n p ps) (findDialogue (multSeek (multInput x) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps)))
+  
+  return endGame
 
 game :: IO ()
-game = undefined
+game = do
+  firstLoop
+
+firstLoop :: IO ()
+firstLoop = loop start
+  where
+    loop :: Game -> IO ()
+    loop Over = putStrLn "Game Over."
+    loop g = do
+      next <- step g
+      loop next
 
 
 ------------------------- Assignment 4: Safety upgrades
@@ -241,7 +416,7 @@ theDialogues :: [(Party,Dialogue)]
 theDialogues = let
   always _ = True
   end str  = Choice str []
-  
+
   isconn  _ _  Over           = False
   isconn  i j (Game m _ _ _ ) = elem i (connected m j)
 
@@ -348,4 +523,3 @@ theDialogues = let
   , ( ["Bertrand Russell","Haskell Curry","Luitzen Brouwer"] , Branch ((==7).here) (end "Road trip! Road trip! Road trip!") (end "Let's head for Error!")
     )
   ]
-
