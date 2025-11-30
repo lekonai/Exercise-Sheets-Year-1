@@ -186,8 +186,8 @@ findDialogue p = searchTheDialogues p theDialogues
     searchTheDialogues [] _   = Action line0 id
     searchTheDialogues p []   = Action line0 id
     searchTheDialogues p xs
-      | all (`elem` (fst (head xs))) p  = snd (head xs)
-      | otherwise                     = searchTheDialogues p (tail xs)
+      | all (`elem` (fst (head xs))) p    = snd (head xs)
+      | otherwise                         = searchTheDialogues p (tail xs)
 
 
 ------------------------- Assignment 3: The game loop
@@ -201,24 +201,16 @@ line5 = "What will you do?"
 type Counter = Int
 data Decision = Trv Counter Int | Dia Counter Int | Tlk Counter Int 
 instance Show Decision where
-  show (Trv cnt int) = "Travel to: " ++ show cnt ++ " " ++ show (theLocations !! int)
-  show (Dia cnt int) = "Interact with (party): " ++ show cnt ++ " " ++ show int
-  show (Tlk cnt int) = "You can see (nearby): " ++ show cnt ++ " " ++ show int
-type Stage = Int
+  show (Trv cnt int) = show cnt ++ " " ++ show (theLocations !! int)
+  show (Dia cnt int) = show cnt ++ " " ++ show int
+  show (Tlk cnt int) = show cnt ++ " " ++ show int
 -- REMEMBER TO REMOVE THE LITTLE PLACEHOLDER TEXTS.
 
 
 -- NON IO VERSIONS
 -- bring it all together
 decisionFunction :: Game -> [Decision] -> [Decision]
--- decisionFunction (Game m n p ps) c ds = (tokSee (ps !! n) c (tokParty p p c (tokConns (connected m n) 0 [])))
 decisionFunction (Game m n p ps) ds = (tokConns (connected m n) 0 (tokParty p p 0 (tokSee (ps !! n) (ps !! n) 0 [])))
-
-enumerator :: [Decision] -> Counter -> [Decision]
-enumerator [] cnt = []
-enumerator ((Trv c i):ds) cnt = (Trv (cnt + 1) i) : (enumerator ds (cnt + 1))
-enumerator ((Dia c i):ds) cnt = (Dia (cnt + 1) i) : (enumerator ds (cnt + 1))
-enumerator ((Tlk c i):ds) cnt = (Tlk (cnt + 1) i) : (enumerator ds (cnt + 1))
 
 tokConns :: [Node] -> Counter -> [Decision] -> [Decision]
 tokConns [] c ds = ds
@@ -231,83 +223,162 @@ tokParty pi pj c ds = (Dia c (fromJust $ elemIndex (head pi) pj)) : (tokParty (t
 tokSee :: Party -> Party -> Counter -> [Decision] -> [Decision]
 tokSee [] pj c ds = ds
 tokSee pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokSee (tail pi) pj 0 ds)
--- tokenisers
 
--- decisionIOFunction :: Game -> IO [Decision]
--- decisionIOFunction (Game m n p ps) = do
---   conns <- tokIOConns (connected m n) 0 
---   party <- tokIOParty p p 0
---   see <- tokIOSee (ps !! n) (ps !! n) 0
---   return (conns ++ party ++ see)
+-- enumeratorIO :: [Decision] -> Counter -> IO [Decision] -- IO conversion & enumeration
+-- enumeratorIO [] cnt = return []
+-- enumeratorIO (( Trv c i ): ds) cnt = do
+--   recurFunc <- enumeratorIO ds (cnt + 1)
+--   return (Trv (cnt + 1) i : recurFunc)
+-- enumeratorIO (( Dia c i ): ds) cnt = do
+--   recurFunc <- enumeratorIO ds (cnt + 1)
+--   return (Dia (cnt + 1) i : recurFunc)
+-- enumeratorIO (( Tlk c i ): ds) cnt = do
+--   recurFunc <- enumeratorIO ds (cnt + 1)
+--   return (Tlk (cnt + 1) i : recurFunc)
 
--- tokIOConns :: [Node] -> Counter -> IO [Decision]
--- tokIOConns [] c = return []
--- tokIOConns (m:ms) c = do
---   recurFunc <- tokIOConns ms 0
---   return ( Trv 0 m : recurFunc )
+enumerator :: [Decision] -> Counter -> [Decision]
+enumerator [] cnt = []
+enumerator ((Trv c i):ds) cnt = (Trv (cnt + 1) i) : (enumerator ds (cnt + 1))
+enumerator ((Dia c i):ds) cnt = (Dia (cnt + 1) i) : (enumerator ds (cnt + 1))
+enumerator ((Tlk c i):ds) cnt = (Tlk (cnt + 1) i) : (enumerator ds (cnt + 1))
 
--- tokIOParty :: Party -> Party -> Counter -> IO [Decision]
--- tokIOParty [] pj c = return []
--- tokIOParty pi pj c = do
---   recurFunc <- tokIOParty (tail pi) pj 0
---   return (Dia c (fromJust $ elemIndex (head pi) pj) : recurFunc)
+printingProcess :: Game -> Bool -> Bool -> Bool -> [Decision] -> IO ()
+printingProcess (Game m n p ps) dtr ddi dtl [] = return ()
+printingProcess (Game m n p ps) dtr ddi dtl (d:ds) = do
+  case d of
+    Trv c i -> do
+      if not dtr
+        then do
+          putStrLn line2
+          putStrLn (" " ++ show (Trv c i))
+          printingProcess (Game m n p ps) True ddi dtl ds 
+      else do
+        putStrLn (" " ++ show (Trv c i))
+        printingProcess (Game m n p ps) dtr ddi dtl ds 
+    Dia c i -> do
+      if not ddi
+        then do
+          putStrLn line3
+          putStrLn (" " ++ show c ++ " " ++ show (p !! i))
+          printingProcess (Game m n p ps) dtr True dtl ds 
+      else do
+        putStrLn (" " ++ show c ++ " " ++ show (p !! i))
+        printingProcess (Game m n p ps) dtr ddi dtl ds 
+    Tlk c i -> do
+      if not dtl
+        then do
+          putStrLn line4
+          putStrLn (" " ++ show c ++ " " ++ show ((ps !! n) !! i))
+          printingProcess (Game m n p ps) dtr ddi True ds 
+      else do
+        putStrLn (" " ++ show c ++ " " ++ show ((ps !! n) !! i))
+        printingProcess (Game m n p ps) dtr ddi dtl ds 
 
--- tokIOSee :: Party -> Party -> Counter -> IO [Decision]
--- tokIOSee [] pj c = return []
--- tokIOSee pi pj c = do
---   recurFunc <- tokIOSee (tail pi) pj 0
---   return (Tlk c (fromJust $ elemIndex (head pi) pj) : recurFunc)
+-- printingProcess dtr ddi dtl (Trv c i:ds) = do
+--   if (not dtr)
+--     then do
+--       putStrLn line2
+--       putStrLn " " ++ show c ++ show i
+--       printingProcess False ddi dtl ds
+--   else do
+--     putStrLn " " ++ show c ++ show i
+--     printingProcess dtr ddi dtl ds
+    
 
-enumeratorIO :: [Decision] -> Counter -> IO [Decision]
-enumeratorIO [] cnt = return []
-enumeratorIO (( Trv c i ): ds) cnt = do
-  recurFunc <- enumeratorIO ds (cnt + 1)
-  return (Trv (cnt + 1) i : recurFunc)
-enumeratorIO (( Dia c i ): ds) cnt = do
-  recurFunc <- enumeratorIO ds (cnt + 1)
-  return (Dia (cnt + 1) i : recurFunc)
-enumeratorIO (( Tlk c i ): ds) cnt = do
-  recurFunc <- enumeratorIO ds (cnt + 1)
-  return (Tlk (cnt + 1) i : recurFunc)
+-- printingProcess dtr ddi dtl (Dia c i:ds) = do
+--   if (not ddi)
+--     then do
+--       putStrLn line3
+--       putStrLn " " ++ show c ++ show i
+--       printingProcess dtr ddi dtl ds
+--   else do
+--     putStrLn " " ++ show c ++ show i
+--     printingProcess dtr ddi dtl ds
+
+seek :: Int -> [Decision] -> Game -> IO Game
+seek x [] (Game m n p ps) = return Over
+seek x (d:ds) (Game m n p ps) = do
+  case d of
+    Trv c i ->
+      if c == x
+        then
+          return (Game m i p ps)
+      else
+        seek x ds (Game m n p ps)
+    Dia c i ->
+      if c == x
+        then 
+          dialogue (Game m n p ps) (findDialogue [(p !! i)])
+      else
+        seek x ds (Game m n p ps)
+    Tlk c i ->
+      if c == x
+        then
+          dialogue (Game m n p ps) (findDialogue [((ps !! n) !! i)])
+      else
+        seek x ds (Game m n p ps)
+
+multInput :: String -> [Int]
+multInput x = msort (map read (words x) :: [Int])
+
+multSeek :: [Int] -> [Decision] -> Game -> [String]
+multSeek [] _ _ = []
+multSeek (x:xs) (d:ds) (Game m n p ps) = do
+  case d of
+    Trv c i ->
+      multSeek (x:xs) ds (Game m n p ps)
+    Dia c i ->
+      if c == x
+        then 
+          (p !! i) : multSeek (xs) ds (Game m n p ps) -- IMPLEMENT
+      else
+        multSeek (x:xs) ds (Game m n p ps)
+    Tlk c i ->
+      if c == x
+        then
+          ((ps !! n) !! i) : multSeek (xs) ds (Game m n p ps) -- IMPLEMENT
+      else
+        multSeek (x:xs) ds (Game m n p ps)
+
+
+
+-- printingProcess dtr ddi dtl (Tlk c i:ds) = do
+--   if (not dtl)
+--     then do
+--       putStrLn line4
+--       putStrLn " " ++ show c ++ show i
+--       printingProcess dtr ddi False ds
+--   else do
+--     putStrLn " " ++ show c ++ show i
+--     printingProcess dtr ddi dtl ds
 
 
 step :: Game -> IO Game
 step (Game m n p ps) = do
   -- let decs <- decisionFunction 0 (Game m n p ps) 0 []
   putStrLn (line1 ++ (theDescriptions !! n))
-  -- DONE
-  --
-  -- travel options
-  
-  putStrLn line2
-  print (connected m n)
-  
-  theList <- enumeratorIO (decisionFunction (Game m n p ps) []) 0
-  print theList
-  -- end of travel options
-  --
-  -- with you are (dialogue options)
-  putStrLn line3
-  print p
-
-  -- end of dialogue options
-  --
-  -- who you can see options (extra dialogue options, but will be approached differently)
-  putStrLn line4 
-  print (ps !! n)
-  -- end of who you can see options
-  --
-  -- decision
+  printingProcess (Game m n p ps) False False False (enumerator (decisionFunction (Game m n p ps) []) 0)
   putStrLn line5
   putStr  (prompt ++ " ")
   x <- getLine -- get decision
+  endGame <- if length x == 1 
+    then (seek (read x::Int) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps))
+    else dialogue (Game m n p ps) (findDialogue (multSeek (multInput x) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps)))
   
-
-  -- end of decision
-  return (Game m n p ps)
+  return endGame
 
 game :: IO ()
-game = undefined
+game = do
+  firstLoop
+
+firstLoop :: IO ()
+firstLoop = loop start
+  where
+    loop :: Game -> IO ()
+    loop Over = putStrLn "Game Over."
+    loop g = do
+      next <- step g
+      loop next
 
 
 ------------------------- Assignment 4: Safety upgrades
