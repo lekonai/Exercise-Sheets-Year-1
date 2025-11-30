@@ -204,11 +204,7 @@ instance Show Decision where
   show (Trv cnt int) = show cnt ++ " " ++ show (theLocations !! int)
   show (Dia cnt int) = show cnt ++ " " ++ show int
   show (Tlk cnt int) = show cnt ++ " " ++ show int
--- REMEMBER TO REMOVE THE LITTLE PLACEHOLDER TEXTS.
 
-
--- NON IO VERSIONS
--- bring it all together
 decisionFunction :: Game -> [Decision] -> [Decision]
 decisionFunction (Game m n p ps) ds = (tokConns (connected m n) 0 (tokParty p p 0 (tokSee (ps !! n) (ps !! n) 0 [])))
 
@@ -223,18 +219,6 @@ tokParty pi pj c ds = (Dia c (fromJust $ elemIndex (head pi) pj)) : (tokParty (t
 tokSee :: Party -> Party -> Counter -> [Decision] -> [Decision]
 tokSee [] pj c ds = ds
 tokSee pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokSee (tail pi) pj 0 ds)
-
--- enumeratorIO :: [Decision] -> Counter -> IO [Decision] -- IO conversion & enumeration
--- enumeratorIO [] cnt = return []
--- enumeratorIO (( Trv c i ): ds) cnt = do
---   recurFunc <- enumeratorIO ds (cnt + 1)
---   return (Trv (cnt + 1) i : recurFunc)
--- enumeratorIO (( Dia c i ): ds) cnt = do
---   recurFunc <- enumeratorIO ds (cnt + 1)
---   return (Dia (cnt + 1) i : recurFunc)
--- enumeratorIO (( Tlk c i ): ds) cnt = do
---   recurFunc <- enumeratorIO ds (cnt + 1)
---   return (Tlk (cnt + 1) i : recurFunc)
 
 enumerator :: [Decision] -> Counter -> [Decision]
 enumerator [] cnt = []
@@ -273,27 +257,6 @@ printingProcess (Game m n p ps) dtr ddi dtl (d:ds) = do
       else do
         putStrLn (" " ++ show c ++ " " ++ show ((ps !! n) !! i))
         printingProcess (Game m n p ps) dtr ddi dtl ds 
-
--- printingProcess dtr ddi dtl (Trv c i:ds) = do
---   if (not dtr)
---     then do
---       putStrLn line2
---       putStrLn " " ++ show c ++ show i
---       printingProcess False ddi dtl ds
---   else do
---     putStrLn " " ++ show c ++ show i
---     printingProcess dtr ddi dtl ds
-    
-
--- printingProcess dtr ddi dtl (Dia c i:ds) = do
---   if (not ddi)
---     then do
---       putStrLn line3
---       putStrLn " " ++ show c ++ show i
---       printingProcess dtr ddi dtl ds
---   else do
---     putStrLn " " ++ show c ++ show i
---     printingProcess dtr ddi dtl ds
 
 seek :: Int -> [Decision] -> Game -> IO Game
 seek x [] (Game m n p ps) = return Over
@@ -339,19 +302,6 @@ multSeek (x:xs) (d:ds) (Game m n p ps) = do
           ((ps !! n) !! i) : multSeek (xs) ds (Game m n p ps) -- IMPLEMENT
       else
         multSeek (x:xs) ds (Game m n p ps)
-
-
-
--- printingProcess dtr ddi dtl (Tlk c i:ds) = do
---   if (not dtl)
---     then do
---       putStrLn line4
---       putStrLn " " ++ show c ++ show i
---       printingProcess dtr ddi False ds
---   else do
---     putStrLn " " ++ show c ++ show i
---     printingProcess dtr ddi dtl ds
-
 
 step :: Game -> IO Game
 step (Game m n p ps) = do
