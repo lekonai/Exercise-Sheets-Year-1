@@ -170,15 +170,44 @@ dialogue g (Choice sti chs) = do
         then
           return g
       else do
-        putStr (prompt ++ " ")
-        x <- getLine
+        x <- diaPromptVal (Choice sti chs)
         if (read x::Int) <= length chs && (read x::Int) > 0
           then
             dialogue g (snd (chs !! ((read x::Int) - 1)))
         else do
-          putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
-          return g
-      
+          if (read x::Int) == 0 -- cancel dialogue
+            then
+              return g
+          else do
+            putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
+            return g
+
+diaPromptVal :: Dialogue -> IO String
+diaPromptVal (Choice sti chs) = do
+  putStr (prompt ++ " ")
+  x <- getLine
+  if length x == 1
+    then
+      if numberChecker x
+        then do
+          if (read x::Int) <= length chs && (read x::Int) >= 0
+            then
+              return x
+          else do
+            putStrLn line6
+            diaPromptVal (Choice sti chs)
+      else do
+        putStrLn line6
+        diaPromptVal (Choice sti chs)
+  else do
+    putStrLn line6
+    diaPromptVal (Choice sti chs)
+
+
+
+  
+
+
 findDialogue :: Party -> Dialogue
 findDialogue p = searchTheDialogues p theDialogues
   where
@@ -305,17 +334,65 @@ multSeek (x:xs) (d:ds) (Game m n p ps) = do
 
 step :: Game -> IO Game
 step (Game m n p ps) = do
-  -- let decs <- decisionFunction 0 (Game m n p ps) 0 []
   putStrLn (line1 ++ (theDescriptions !! n))
   printingProcess (Game m n p ps) False False False (enumerator (decisionFunction (Game m n p ps) []) 0)
   putStrLn line5
-  putStr  (prompt ++ " ")
-  x <- getLine -- get decision
+  -- putStr  (prompt ++ " ")
+  x <- stepDecPromptVal (enumerator (decisionFunction (Game m n p ps) []) 0)-- get decision
   endGame <- if length x == 1 
-    then (seek (read x::Int) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps))
+    then do
+      if (read x::Int) == 0
+        then
+          return Over
+      else (seek (read x::Int) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps))
     else dialogue (Game m n p ps) (findDialogue (multSeek (multInput x) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps)))
   
   return endGame
+
+numberChecker :: String -> Bool
+-- numberChecker [] = False -- so then you don't get false positives when you have empty entries
+numberChecker [] = True -- nevermind turns out i've worked around the issue anyway
+numberChecker (s:ss)
+  -- | isDigit s && ss == [] = True
+  | isDigit s             = numberChecker ss
+  | otherwise             = False
+
+stepDecPromptVal :: [Decision] -> IO String
+stepDecPromptVal ds = do
+  putStr (prompt ++ " ")
+  x <- getLine
+  if length x >= 1
+    then  
+      if length x == 1
+        then do
+          if  numberChecker x == False || (read x::Int) > length ds || (read x::Int) <= -1
+            then do
+              putStrLn line6
+              stepDecPromptVal ds 
+          else do
+            return x
+      else do
+        if any (== False) (map numberChecker (words x)) || length (words x) == 1 || not (multValidator (words x) (multEvaluator ds))
+          then do
+            putStrLn line6
+            stepDecPromptVal ds   
+        else do
+          return x
+  else do
+    putStrLn line6
+    stepDecPromptVal ds
+
+multValidator :: [String] -> [Counter] -> Bool
+multValidator [] y = True
+multValidator (x:xs) y
+  | (read x::Int) `elem` y  = multValidator xs y
+  | otherwise   = False
+
+multEvaluator :: [Decision] -> [Counter] -- basically this is just going to take all the counters/IDs so it can have a quantifier applied to it in validator?? ykwim
+multEvaluator []               = []
+multEvaluator ((Trv c i) : ds) = multEvaluator ds
+multEvaluator ((Dia c i) : ds) = c : multEvaluator ds
+multEvaluator ((Tlk c i) : ds) = c : multEvaluator ds
 
 game :: IO ()
 game = do
@@ -325,7 +402,7 @@ firstLoop :: IO ()
 firstLoop = loop start
   where
     loop :: Game -> IO ()
-    loop Over = putStrLn "Game Over."
+    loop Over = return ()
     loop g = do
       next <- step g
       loop next
@@ -334,7 +411,6 @@ firstLoop = loop start
 ------------------------- Assignment 4: Safety upgrades
 
 line6 = "[Unrecognized input]"
-
 
 ------------------------- Assignment 5: Solving the game
 
