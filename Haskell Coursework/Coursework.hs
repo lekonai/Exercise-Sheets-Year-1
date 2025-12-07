@@ -450,7 +450,12 @@ select = allPossible
 --         | otherwise                         = cycle p (tail xs)
 
 travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
-travel m n = [travel m n | n <- zip [(getMin m)..(getMax m)]]
+travel m n = [(i, (traverse m i n)) | i <- zip [(getMin m)..(getMax m)]]
+
+traverse :: Map -> Node -> Node -> Int
+traverse m i d = undefined
+-- i = start, d = destination
+
 
 getMin :: Map -> Int
 getMin m = foldr1 min ((map fst m) ++ (map snd m))
@@ -459,10 +464,6 @@ getMax :: Map -> Int
 getMax m = foldr1 max ((map fst m) ++ (map snd m))
 
 -- terminal data: [(0,1),(0,2),(1,2),(2,3),(2,4),(3,5)]
-
-traverse :: Map -> Node -> [Node] -> Node -> [(Node, [Int])]
-traverse m ni ns nj = undefined
--- map, start node, all nodes visited, end node
 
 allSteps :: Game -> [(Solution,Game)]
 allSteps = undefined
