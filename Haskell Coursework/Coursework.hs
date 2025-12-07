@@ -49,8 +49,6 @@ connected (m:ms) n
   | snd m == n    = fst m : connected ms n
   | otherwise     = connected ms n
 
-
--- connect = undefined
 -- terminal example: connect 2 7 [(1,2), (2,3), (3,6), (4,6)]
 connect :: Node -> Node -> Map -> Map
 connect ni nj ms
@@ -451,19 +449,20 @@ select = allPossible
 --         | all (`elem` (fst (head xs))) p    = p
 --         | otherwise                         = cycle p (tail xs)
 
+travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
+travel m n = [travel m n | n <- zip [(getMin m)..(getMax m)]]
 
+getMin :: Map -> Int
+getMin m = foldr1 min ((map fst m) ++ (map snd m))
 
+getMax :: Map -> Int
+getMax m = foldr1 max ((map fst m) ++ (map snd m))
 
-diaFindings :: [Party] -> [Party]
-diaFindings pi = undefined
+-- terminal data: [(0,1),(0,2),(1,2),(2,3),(2,4),(3,5)]
 
--- all (`elem` (fst (head xs))) p
--- which is quite very key
-
-
-
-travel :: Map -> Node -> [(Node,[Int])]
-travel = undefined
+traverse :: Map -> Node -> [Node] -> Node -> [(Node, [Int])]
+traverse m ni ns nj = undefined
+-- map, start node, all nodes visited, end node
 
 allSteps :: Game -> [(Solution,Game)]
 allSteps = undefined
