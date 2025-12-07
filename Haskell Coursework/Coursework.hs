@@ -1,3 +1,4 @@
+import Control.Monad
 import Data.Maybe
 import Data.List
 import Data.Char
@@ -117,7 +118,6 @@ removeHere pi (Game m n pj ps)  = removeAt n pi (Game m n pj ps)
 prompt = ">>"
 line0  = "There is nothing we can do."
 
-
 data Dialogue = Action  String  Event
               | Branch  (Game -> Bool) Dialogue Dialogue
               | Choice  String  [( String , Dialogue )]
@@ -175,12 +175,13 @@ dialogue g (Choice sti chs) = do
           then
             dialogue g (snd (chs !! ((read x::Int) - 1)))
         else do
-          if (read x::Int) == 0 -- cancel dialogue
-            then
-              return g
-          else do
-            putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
-            return g
+          return g -- this is when its 0, if you somehow manage to get through the first if clause then.. idk
+          -- if (read x::Int) == 0 -- cancel dialogue
+          --   then
+          --     return g
+          -- else do
+          --   putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
+          --   return g
 
 diaPromptVal :: Dialogue -> IO String
 diaPromptVal (Choice sti chs) = do
@@ -203,11 +204,6 @@ diaPromptVal (Choice sti chs) = do
     putStrLn line6
     diaPromptVal (Choice sti chs)
 
-
-
-  
-
-
 findDialogue :: Party -> Dialogue
 findDialogue p = searchTheDialogues p theDialogues
   where
@@ -229,10 +225,12 @@ line5 = "What will you do?"
 
 type Counter = Int
 data Decision = Trv Counter Int | Dia Counter Int | Tlk Counter Int 
+  -- deriving Show
 instance Show Decision where
   show (Trv cnt int) = show cnt ++ " " ++ show (theLocations !! int)
   show (Dia cnt int) = show cnt ++ " " ++ show int
   show (Tlk cnt int) = show cnt ++ " " ++ show int
+-- this instance is only useful in one part, but i can't delete just two of them as all have to be derived i think
 
 decisionFunction :: Game -> [Decision] -> [Decision]
 decisionFunction (Game m n p ps) ds = (tokConns (connected m n) 0 (tokParty p p 0 (tokSee (ps !! n) (ps !! n) 0 [])))
@@ -337,7 +335,6 @@ step (Game m n p ps) = do
   putStrLn (line1 ++ (theDescriptions !! n))
   printingProcess (Game m n p ps) False False False (enumerator (decisionFunction (Game m n p ps) []) 0)
   putStrLn line5
-  -- putStr  (prompt ++ " ")
   x <- stepDecPromptVal (enumerator (decisionFunction (Game m n p ps) []) 0)-- get decision
   endGame <- if length x == 1 
     then do
@@ -402,8 +399,8 @@ firstLoop :: IO ()
 firstLoop = loop start
   where
     loop :: Game -> IO ()
-    loop Over = return ()
-    loop g = do
+    loop Over   = return ()
+    loop g      = do
       next <- step g
       loop next
 
@@ -420,10 +417,50 @@ data Command  = Travel [Int] | Select Party | Talk [Int]
 type Solution = [Command]
 
 talk ::Game -> Dialogue -> [(Game,[Int])]
-talk = undefined
+talk g d = explorerD g d []
+  where
+    explorerD :: Game -> Dialogue -> [Int] -> [(Game, [Int])]
+    explorerD Over _ _            = []
+    explorerD g (Action _ ev) is  = [(ev g, is)] -- thank god id functions count as valid events
+    explorerD g (Branch c l r) is = if c g 
+      then explorerD g l is
+      else explorerD g r is
+    explorerD g (Choice _ chs) is = concat [explorerD g d (is ++ [i]) | (i, (sti, d)) <- zip [1..] chs] -- bless lazy evaluation
+
+nn :: Foldable t => t a -> Bool
+nn x = not (null x) -- necessary because for some reason it just doesnt work 
+
+powerset :: [a] -> [[a]]
+powerset = filterM (const[True, False])
+
+allPossible :: Game -> [Party]
+allPossible (Game m n p ps) = powerset ( concat ( filter nn [p] ++ (filter nn [(ps !! n)]) ) )
+-- terminal example: filter nn (powerset (concat (allPossible (testGame 1))))
 
 select :: Game -> [Party]
-select = undefined
+select = allPossible
+    
+-- select g = filter nn (map helperParties (allPossible g) )
+--   where
+--     helperParties :: Party -> Party
+--     helperParties p = cycle p theDialogues
+--      where
+--       cycle :: Party -> [(Party, Dialogue)] -> Party
+--       cycle p []   = []
+--       cycle p xs
+--         | all (`elem` (fst (head xs))) p    = p
+--         | otherwise                         = cycle p (tail xs)
+
+
+
+
+diaFindings :: [Party] -> [Party]
+diaFindings pi = undefined
+
+-- all (`elem` (fst (head xs))) p
+-- which is quite very key
+
+
 
 travel :: Map -> Node -> [(Node,[Int])]
 travel = undefined
