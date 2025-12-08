@@ -426,7 +426,7 @@ talk g d = explorerD g d []
     explorerD g (Choice _ chs) is = concat [explorerD g d (is ++ [i]) | (i, (sti, d)) <- zip [1..] chs] -- bless lazy evaluation
 
 nn :: Foldable t => t a -> Bool
-nn x = not (null x) -- necessary because for some reason it just doesnt work 
+nn = not . null
 
 powerset :: [a] -> [[a]]
 powerset = filterM (const[True, False])
@@ -434,6 +434,9 @@ powerset = filterM (const[True, False])
 allPossible :: Game -> [Party]
 allPossible (Game m n p ps) = powerset ( concat ( filter nn [p] ++ (filter nn [(ps !! n)]) ) )
 -- terminal example: filter nn (powerset (concat (allPossible (testGame 1))))
+-- technically i don't actually need this function as i could just import it into select... but it makes select look
+-- cleaner if i do this
+
 
 select :: Game -> [Party]
 select = allPossible
@@ -450,17 +453,25 @@ select = allPossible
 --         | otherwise                         = cycle p (tail xs)
 
 travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
-travel m n = [(i, (traverse m i n)) | i <- zip [(getMin m)..(getMax m)]]
+travel m n = [(i, (breadthFirstS m i n [] (connected m i) [])) | i <- [(getMin m)..(getMax m)]]
 
-traverse :: Map -> Node -> Node -> Int
-traverse m i d = undefined
+type Visited = [Int]
+type Queue = [Int]
+type Path = [Int]
+bfs :: Map -> Node -> Node -> Visited -> Queue -> Path -> [Int]
+bfs m i d v [] p = p
+bfs m i d v q p
+  | i == d              = p
+  | i `elem` v          = bfs m (head q) d v (tail q) p
+  | nn (connected m i)  = bfs m (head q) d (v ++ [i]) ((tail q) ++ (filter (`notElem` (v ++ [i])) (connected m i))) (p ++ [i])
+  | otherwise           = bfs m (head q) d (v ++ [i]) (tail q) (init p)
 -- i = start, d = destination
+-- FAILED ATTEMPT 1
 
-
-getMin :: Map -> Int
+getMin :: Map -> Node
 getMin m = foldr1 min ((map fst m) ++ (map snd m))
 
-getMax :: Map -> Int
+getMax :: Map -> Node
 getMax m = foldr1 max ((map fst m) ++ (map snd m))
 
 -- terminal data: [(0,1),(0,2),(1,2),(2,3),(2,4),(3,5)]
