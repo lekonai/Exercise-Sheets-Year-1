@@ -404,7 +404,7 @@ talk ::Game -> Dialogue -> [(Game,[Int])]
 talk g d = explorerD g d []
   where
     explorerD :: Game -> Dialogue -> [Int] -> [(Game, [Int])]
-    explorerD Over _ _            = []
+    explorerD Over _ _            = [] -- not sure if this'll be necessary as its walkthrough but
     explorerD g (Action _ ev) is  = [(ev g, is)] -- thank god id functions count as valid events
     explorerD g (Branch c l r) is = if c g 
       then explorerD g l is
@@ -425,11 +425,10 @@ allPossible (Game m n p ps) = powerset ( concat ( filter nn [p] ++ (filter nn [(
 select :: Game -> [Party]
 select = allPossible
 
--- travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
--- travel m n = [(i, (bfs m i n [i] (connected m i) 0)) | i <- [(getMin m)..(getMax m)]]
+travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
+travel m n = [(i, bfs m n i [] [(n, [])]) | i <- [(getMin m)..(getMax m)]]
 
 type Visited = [Int]
-type Frontier = [Int]
 type Path = [Int]
 -- ATTEMPT 1
 -- bfs :: Map -> Node -> Node -> Visited -> Frontier -> Path -> [Int]
@@ -457,6 +456,19 @@ type Path = [Int]
 -- bfs m i d v f s 
 --   | i == d = s + 1
 --   | otherwise = bfs m (head f) d (v ++ [(head f)]) (tail f ++ (filter (\x -> x `notElem` (v ++ [head f])) (connected m (head f)))) (s + 1)
+
+-- ATTEMPT 4 - TIME TO GET PROPER PATHFINDING
+bfs :: Map -> Node -> Node -> Visited -> [(Node, Path)] -> Path
+bfs m i d v [] = []
+bfs m i d v ((curNode, p):f)
+  | curNode == d        = reverse p
+  | curNode `elem` v    = bfs m i d v f
+  | otherwise     = 
+      let adj = connected m curNode -- adjacent nodes
+          newV = curNode : v -- appending = O(1) and prepending = O(1) somehow?!
+          neighbourP = [(n, x:p) | (x, n) <- zip [1..] adj, n `notElem` newV] -- enumeraion
+          newF = f ++ neighbourP
+      in bfs m i d newV newF
 
 getMin :: Map -> Node
 getMin m = foldr1 min ((map fst m) ++ (map snd m))
