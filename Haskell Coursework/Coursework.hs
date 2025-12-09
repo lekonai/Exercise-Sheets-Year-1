@@ -38,7 +38,6 @@ type Event     = Game -> Game
 testGame :: Node -> Game
 testGame i = Game [(0,1)] i ["Russell"] [[],["Brouwer","Heyting"]]
 
-
 ------------------------- Assignment 1: The game world
 
 -- terminal example: connected [(1,2), (2,3), (4,6)] 2
@@ -69,7 +68,7 @@ disconnect ni nj ms
         | otherwise                                                             = m : disconnecting ni nj ms
 
 -- terminal example: add ["Dijkstra", "Norvig"] (testGame 0)
-add :: Party -> Event -- so this is Party -> Game -> Game
+add :: Party -> Event 
 add _ Over              = Over
 add [] (Game m n p ps)  = Game m n p ps
 add (x:xs) (Game m n p ps)
@@ -95,14 +94,11 @@ addHere pi (Game m n pj ps) = addAt n pi (Game m n pj ps)
 
 -- terminal example: remove ["Brouwer","Russell"] (testGame 0)
 remove :: Party -> Event
--- remove [] (Game m n p ps) = Game m n p ps -- just in case, will commit this
--- remove (x:xs) (Game m n p ps) = remove xs (Game m n (delete x p) ps)
 remove pi Over             = Over
 remove pi (Game m n pj ps) = Game m n (pj \\ pi) ps
 
 -- terminal example: removeAt 1 ["Heyting"] (testGame 0)
 removeAt :: Node -> Party -> Event
--- removeAt nd [] (Game m n pj ps) = Game m n pj ps -- this case isn't necessary
 removeAt _ _ Over               = Over
 removeAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 1 nd pi ps)
 
@@ -136,7 +132,6 @@ testDialogue = Branch ( isAtZero )
   isAtZero Over           = False
   isAtZero (Game _ n _ _) = n == 0
 
-
 dialogue :: Game -> Dialogue -> IO Game
 
 dialogue g (Action st ev) = 
@@ -154,7 +149,7 @@ dialogue g (Branch c di dj) =
 
 -- second implementation
 dialogue g (Choice sti chs) = do
-  if length sti > 2 && not (isDigit (sti !! 0)) -- this is a very naff input
+  if length sti > 2 && not (isDigit (sti !! 0)) -- this has to be the worst part of the code
     then do
       putStrLn sti
       dialogue g (Choice "0" chs)
@@ -173,13 +168,7 @@ dialogue g (Choice sti chs) = do
           then
             dialogue g (snd (chs !! ((read x::Int) - 1)))
         else do
-          return g -- this is when its 0, if you somehow manage to get through the first if clause then.. idk
-          -- if (read x::Int) == 0 -- cancel dialogue
-          --   then
-          --     return g
-          -- else do
-          --   putStrLn "erroneous input" -- PRETTY SURE there's an error checking assignment, so this is not necessary yet
-          --   return g
+          return g -- this is when its 0, if you somehow manage to get through the first if clause with another input then.. idk
 
 diaPromptVal :: Dialogue -> IO String
 diaPromptVal (Choice sti chs) = do
@@ -223,9 +212,8 @@ line5 = "What will you do?"
 
 type Counter = Int
 data Decision = Trv Counter Int | Dia Counter Int | Tlk Counter Int 
-  -- deriving Show
 instance Show Decision where
-  show (Trv cnt int) = show cnt ++ " " ++ show (theLocations !! int)
+  show (Trv cnt int) = show cnt ++ " " ++ (theLocations !! int)
   show (Dia cnt int) = show cnt ++ " " ++ show int
   show (Tlk cnt int) = show cnt ++ " " ++ show int
 -- this instance is only useful in one part, but i can't delete just two of them as all have to be derived i think
@@ -268,19 +256,19 @@ printingProcess (Game m n p ps) dtr ddi dtl (d:ds) = do
       if not ddi
         then do
           putStrLn line3
-          putStrLn (" " ++ show c ++ " " ++ show (p !! i))
+          putStrLn (" " ++ show c ++ " " ++ (p !! i))
           printingProcess (Game m n p ps) dtr True dtl ds 
       else do
-        putStrLn (" " ++ show c ++ " " ++ show (p !! i))
+        putStrLn (" " ++ show c ++ " " ++ (p !! i))
         printingProcess (Game m n p ps) dtr ddi dtl ds 
     Tlk c i -> do
       if not dtl
         then do
           putStrLn line4
-          putStrLn (" " ++ show c ++ " " ++ show ((ps !! n) !! i))
+          putStrLn (" " ++ show c ++ " " ++ ((ps !! n) !! i))
           printingProcess (Game m n p ps) dtr ddi True ds 
       else do
-        putStrLn (" " ++ show c ++ " " ++ show ((ps !! n) !! i))
+        putStrLn (" " ++ show c ++ " " ++ ((ps !! n) !! i))
         printingProcess (Game m n p ps) dtr ddi dtl ds 
 
 seek :: Int -> [Decision] -> Game -> IO Game
@@ -318,13 +306,13 @@ multSeek (x:xs) (d:ds) (Game m n p ps) = do
     Dia c i ->
       if c == x
         then 
-          (p !! i) : multSeek (xs) ds (Game m n p ps) -- IMPLEMENT
+          (p !! i) : multSeek (xs) ds (Game m n p ps) 
       else
         multSeek (x:xs) ds (Game m n p ps)
     Tlk c i ->
       if c == x
         then
-          ((ps !! n) !! i) : multSeek (xs) ds (Game m n p ps) -- IMPLEMENT
+          ((ps !! n) !! i) : multSeek (xs) ds (Game m n p ps)
       else
         multSeek (x:xs) ds (Game m n p ps)
 
@@ -345,10 +333,8 @@ step (Game m n p ps) = do
   return endGame
 
 numberChecker :: String -> Bool
--- numberChecker [] = False -- so then you don't get false positives when you have empty entries
 numberChecker [] = True -- nevermind turns out i've worked around the issue anyway
 numberChecker (s:ss)
-  -- | isDigit s && ss == [] = True
   | isDigit s             = numberChecker ss
   | otherwise             = False
 
@@ -435,38 +421,42 @@ allPossible :: Game -> [Party]
 allPossible (Game m n p ps) = powerset ( concat ( filter nn [p] ++ (filter nn [(ps !! n)]) ) )
 -- terminal example: filter nn (powerset (concat (allPossible (testGame 1))))
 -- technically i don't actually need this function as i could just import it into select... but it makes select look
--- cleaner if i do this
-
 
 select :: Game -> [Party]
 select = allPossible
-    
--- select g = filter nn (map helperParties (allPossible g) )
---   where
---     helperParties :: Party -> Party
---     helperParties p = cycle p theDialogues
---      where
---       cycle :: Party -> [(Party, Dialogue)] -> Party
---       cycle p []   = []
---       cycle p xs
---         | all (`elem` (fst (head xs))) p    = p
---         | otherwise                         = cycle p (tail xs)
 
-travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
-travel m n = [(i, (breadthFirstS m i n [] (connected m i) [])) | i <- [(getMin m)..(getMax m)]]
+-- travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
+-- travel m n = [(i, (bfs m i n [i] (connected m i) 0)) | i <- [(getMin m)..(getMax m)]]
 
 type Visited = [Int]
-type Queue = [Int]
+type Frontier = [Int]
 type Path = [Int]
-bfs :: Map -> Node -> Node -> Visited -> Queue -> Path -> [Int]
-bfs m i d v [] p = p
-bfs m i d v q p
-  | i == d              = p
-  | i `elem` v          = bfs m (head q) d v (tail q) p
-  | nn (connected m i)  = bfs m (head q) d (v ++ [i]) ((tail q) ++ (filter (`notElem` (v ++ [i])) (connected m i))) (p ++ [i])
-  | otherwise           = bfs m (head q) d (v ++ [i]) (tail q) (init p)
+-- ATTEMPT 1
+-- bfs :: Map -> Node -> Node -> Visited -> Frontier -> Path -> [Int]
+-- bfs m i d v [] p nn (connected m i) = p
+-- bfs m i d v q p
+--   | i == d              = p
+--   | i `elem` v          = bfs m (head q) d v (tail q) p
+--   | nn (connected m i)  = bfs m (head q) d (v ++ [i]) ((tail q) ++ (filter (`notElem` (v ++ [i])) (connected m i))) (p ++ [i])
+--   | otherwise           = bfs m (head q) d (v ++ [i]) (tail q) (init p)
 -- i = start, d = destination
--- FAILED ATTEMPT 1
+
+-- map, start node, destination node, visited nodes, Frontier to explore through next, path, path to return
+-- don't FORGET that the search returns the actual nodes that it explores rather than the options at each node.
+-- ATTEMPT 2
+-- bfs :: Map -> Node -> Node -> Visited -> Frontier -> Path -> Path
+-- bfs m i d v [] p = []
+-- bfs m i d v f p
+--   | i == d    = p
+--   | i /= d && nn (connected m i) = bfs m (head f) d (v ++ [i]) (tail f ++ (filter (\x -> x `notElem` v) (connected m i))) (p ++ [i])
+--   | otherwise = bfs m (head f) d (v ++ [i]) (tail f) (init p)
+
+-- ATTEMPT 3 (ENSURING I CAN ACTUALLY AAAAARGH)
+-- bfs :: Map -> Node -> Node -> Visited -> Frontier -> Int -> Int
+-- bfs m i d v [] s = s 
+-- bfs m i d v f s 
+--   | i == d = s + 1
+--   | otherwise = bfs m (head f) d (v ++ [(head f)]) (tail f ++ (filter (\x -> x `notElem` (v ++ [head f])) (connected m (head f)))) (s + 1)
 
 getMin :: Map -> Node
 getMin m = foldr1 min ((map fst m) ++ (map snd m))
@@ -490,7 +480,6 @@ walkthrough = (putStrLn . unlines . filter (not . null) . map format . solve) st
     format (Select xs) = "Select: " ++ foldr1 (\x y -> x ++ ", " ++ y) xs
     format (Talk   []) = ""
     format (Talk   xs) = "Talk:   " ++ unwords (map show xs)
-
 
 ------------------------- Game data
 
