@@ -425,39 +425,25 @@ allPossible (Game m n p ps) = powerset ( concat ( filter nn [p] ++ (filter nn [(
 select :: Game -> [Party]
 select = allPossible
 
+-- trueSelect :: Game -> [Party] -- this is a function improvised from an old to just get all the true options of a party
+-- trueSelect g = filter nn (map helperParties (allPossible g) )
+--   where
+--     helperParties :: Party -> Party
+--     helperParties p = cycle p theDialogues
+--      where
+--       cycle :: Party -> [(Party, Dialogue)] -> Party
+--       cycle p []   = []
+--       cycle p xs
+--         | all (`elem` (fst (head xs))) p    = p
+--         | otherwise                         = cycle p (tail xs)
+
+
 travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
 travel m n = [(i, bfs m n i [] [(n, [])]) | i <- [(getMin m)..(getMax m)]]
 
 type Visited = [Int]
 type Path = [Int]
--- ATTEMPT 1
--- bfs :: Map -> Node -> Node -> Visited -> Frontier -> Path -> [Int]
--- bfs m i d v [] p nn (connected m i) = p
--- bfs m i d v q p
---   | i == d              = p
---   | i `elem` v          = bfs m (head q) d v (tail q) p
---   | nn (connected m i)  = bfs m (head q) d (v ++ [i]) ((tail q) ++ (filter (`notElem` (v ++ [i])) (connected m i))) (p ++ [i])
---   | otherwise           = bfs m (head q) d (v ++ [i]) (tail q) (init p)
--- i = start, d = destination
 
--- map, start node, destination node, visited nodes, Frontier to explore through next, path, path to return
--- don't FORGET that the search returns the actual nodes that it explores rather than the options at each node.
--- ATTEMPT 2
--- bfs :: Map -> Node -> Node -> Visited -> Frontier -> Path -> Path
--- bfs m i d v [] p = []
--- bfs m i d v f p
---   | i == d    = p
---   | i /= d && nn (connected m i) = bfs m (head f) d (v ++ [i]) (tail f ++ (filter (\x -> x `notElem` v) (connected m i))) (p ++ [i])
---   | otherwise = bfs m (head f) d (v ++ [i]) (tail f) (init p)
-
--- ATTEMPT 3 (ENSURING I CAN ACTUALLY AAAAARGH)
--- bfs :: Map -> Node -> Node -> Visited -> Frontier -> Int -> Int
--- bfs m i d v [] s = s 
--- bfs m i d v f s 
---   | i == d = s + 1
---   | otherwise = bfs m (head f) d (v ++ [(head f)]) (tail f ++ (filter (\x -> x `notElem` (v ++ [head f])) (connected m (head f)))) (s + 1)
-
--- ATTEMPT 4 - TIME TO GET PROPER PATHFINDING
 bfs :: Map -> Node -> Node -> Visited -> [(Node, Path)] -> Path
 bfs m i d v [] = []
 bfs m i d v ((curNode, p):f)
@@ -466,7 +452,7 @@ bfs m i d v ((curNode, p):f)
   | otherwise     = 
       let adj = connected m curNode -- adjacent nodes
           newV = curNode : v -- appending = O(1) and prepending = O(1) somehow?!
-          neighbourP = [(n, x:p) | (x, n) <- zip [1..] adj, n `notElem` newV] -- enumeraion
+          neighbourP = [(n, x:p) | (x, n) <- zip [1..] adj, n `notElem` newV] -- enumeration & neighbouring paths
           newF = f ++ neighbourP
       in bfs m i d newV newF
 
@@ -477,9 +463,17 @@ getMax :: Map -> Node
 getMax m = foldr1 max ((map fst m) ++ (map snd m))
 
 -- terminal data: [(0,1),(0,2),(1,2),(2,3),(2,4),(3,5)]
+-- step (Game theMap 1 [] theCharacters)
+-- ^^ the main example
 
-allSteps :: Game -> [(Solution,Game)]
-allSteps = undefined
+allSteps :: Game -> [(Solution,Game)] -- WHY WOULD YOU MAP FST LET ME JUST SEE THE WHOLE THING OHHHH MY GODDD
+allSteps g = undefined
+
+-- selIterator :: [Party] -> Party
+-- selIterator [] = []
+-- selIterator (p:ps)
+--   | findDialogue p 
+--   | otherwise = selIterator ps
 
 solve :: Game -> Solution
 solve = undefined
