@@ -40,7 +40,6 @@ testGame i = Game [(0,1)] i ["Russell"] [[],["Brouwer","Heyting"]]
 
 ------------------------- Assignment 1: The game world
 
--- terminal example: connected [(1,2), (2,3), (4,6)] 2
 connected :: Map -> Node -> [Node]
 connected [] n = []
 connected (m:ms) n
@@ -48,7 +47,6 @@ connected (m:ms) n
   | snd m == n    = fst m : connected ms n
   | otherwise     = connected ms n
 
--- terminal example: connect 2 7 [(1,2), (2,3), (3,6), (4,6)]
 connect :: Node -> Node -> Map -> Map
 connect ni nj ms
   | (ni, nj) `elem` ms || (nj, ni) `elem` ms  = ms
@@ -67,7 +65,6 @@ disconnect ni nj ms
         | ((fst m) == ni && (snd m) == nj) || ((snd m) == ni && (fst m) == nj)  = ms
         | otherwise                                                             = m : disconnecting ni nj ms
 
--- terminal example: add ["Dijkstra", "Norvig"] (testGame 0)
 add :: Party -> Event 
 add _ Over              = Over
 add [] (Game m n p ps)  = Game m n p ps
@@ -76,7 +73,6 @@ add (x:xs) (Game m n p ps)
   | otherwise         = add xs (Game m n p ps)
 
 addAt :: Node -> Party -> Event
--- terminal example: addAt 1 ["Dijkstra"] (testGame 0)
 addAt _ _ Over                = Over
 addAt _ [] (Game m n pj ps)   = Game m n pj ps -- practically an empty case
 addAt nd pi (Game m n pj ps)  = Game m n pj (goToLocation 0 nd pi ps)
@@ -88,16 +84,13 @@ goToLocation o nd pi (p:ps)
   | nd == 0 && o == 1 = (p \\ pi) : ps
   | otherwise         = p : goToLocation o (nd - 1) pi ps
 
--- terminal example: addHere ["Dijkstra"] (testGame 0)
 addHere :: Party -> Event
 addHere pi (Game m n pj ps) = addAt n pi (Game m n pj ps)
 
--- terminal example: remove ["Brouwer","Russell"] (testGame 0)
 remove :: Party -> Event
 remove pi Over             = Over
 remove pi (Game m n pj ps) = Game m n (pj \\ pi) ps
 
--- terminal example: removeAt 1 ["Heyting"] (testGame 0)
 removeAt :: Node -> Party -> Event
 removeAt _ _ Over               = Over
 removeAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 1 nd pi ps)
@@ -105,7 +98,6 @@ removeAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 1 nd pi ps)
 removeHere :: Party -> Event
 removeHere _ Over               = Over
 removeHere pi (Game m n pj ps)  = removeAt n pi (Game m n pj ps)
-
 
 ------------------------- Assignment 2: Dialogues
 
@@ -149,7 +141,7 @@ dialogue g (Branch c di dj) =
 
 -- second implementation
 dialogue g (Choice sti chs) = do
-  if length sti > 2 && not (isDigit (sti !! 0)) -- this has to be the worst part of the code
+  if length sti > 2 && not (isDigit (sti !! 0)) -- this is one of the most 
     then do
       putStrLn sti
       dialogue g (Choice "0" chs)
@@ -163,33 +155,33 @@ dialogue g (Choice sti chs) = do
         then
           return g
       else do
-        x <- diaPromptVal (Choice sti chs)
+        x <- dialoguePromptValidation (Choice sti chs)
         if (read x::Int) <= length chs && (read x::Int) > 0
           then
             dialogue g (snd (chs !! ((read x::Int) - 1)))
         else do
-          return g -- this is when its 0, if you somehow manage to get through the first if clause with another input then.. idk
+          return g
 
-diaPromptVal :: Dialogue -> IO String
-diaPromptVal (Choice sti chs) = do
+dialoguePromptValidation :: Dialogue -> IO String
+dialoguePromptValidation (Choice sti chs) = do
   putStr (prompt ++ " ")
   x <- getLine
   if length x == 1
     then
-      if numberChecker x
+      if allNumberChecker x
         then do
           if (read x::Int) <= length chs && (read x::Int) >= 0
             then
               return x
           else do
             putStrLn line6
-            diaPromptVal (Choice sti chs)
+            dialoguePromptValidation (Choice sti chs)
       else do
         putStrLn line6
-        diaPromptVal (Choice sti chs)
+        dialoguePromptValidation (Choice sti chs)
   else do
     putStrLn line6
-    diaPromptVal (Choice sti chs)
+    dialoguePromptValidation (Choice sti chs)
 
 findDialogue :: Party -> Dialogue
 findDialogue p = searchTheDialogues p theDialogues
@@ -211,32 +203,32 @@ line4 = "You can see:"
 line5 = "What will you do?"
 
 type Counter = Int
-data Decision = Trv Counter Int | Dia Counter Int | Tlk Counter Int 
+data Decision = Trv Counter Int | Pty Counter Int | Tlk Counter Int 
 instance Show Decision where
   show (Trv cnt int) = show cnt ++ " " ++ (theLocations !! int)
-  show (Dia cnt int) = show cnt ++ " " ++ show int
+  show (Pty cnt int) = show cnt ++ " " ++ show int
   show (Tlk cnt int) = show cnt ++ " " ++ show int
 -- this instance is only useful in one part, but i can't delete just two of them as all have to be derived i think
 
-decisionFunction :: Game -> [Decision] -> [Decision]
-decisionFunction (Game m n p ps) ds = (tokConns (connected m n) 0 (tokParty p p 0 (tokSee (ps !! n) (ps !! n) 0 [])))
+decisionsProduction :: Game -> [Decision] -> [Decision]
+decisionsProduction (Game m n p ps) ds = (tokenizeConns (connected m n) 0 (tokenizeParty p p 0 (tokenizeAtLocation (ps !! n) (ps !! n) 0 [])))
 
-tokConns :: [Node] -> Counter -> [Decision] -> [Decision]
-tokConns [] c ds = ds
-tokConns (m:ms) c ds = (Trv c m) : (tokConns ms 0 (ds))
+tokenizeConns :: [Node] -> Counter -> [Decision] -> [Decision]
+tokenizeConns [] c ds = ds
+tokenizeConns (m:ms) c ds = (Trv c m) : (tokenizeConns ms 0 (ds))
 
-tokParty :: Party -> Party -> Counter -> [Decision] -> [Decision]
-tokParty [] pj c ds = ds
-tokParty pi pj c ds = (Dia c (fromJust $ elemIndex (head pi) pj)) : (tokParty (tail pi) pj 0 ds)
+tokenizeParty :: Party -> Party -> Counter -> [Decision] -> [Decision]
+tokenizeParty [] pj c ds = ds
+tokenizeParty pi pj c ds = (Pty c (fromJust $ elemIndex (head pi) pj)) : (tokenizeParty (tail pi) pj 0 ds)
 
-tokSee :: Party -> Party -> Counter -> [Decision] -> [Decision]
-tokSee [] pj c ds = ds
-tokSee pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokSee (tail pi) pj 0 ds)
+tokenizeAtLocation :: Party -> Party -> Counter -> [Decision] -> [Decision]
+tokenizeAtLocation [] pj c ds = ds
+tokenizeAtLocation pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokenizeAtLocation (tail pi) pj 0 ds)
 
 enumerator :: [Decision] -> Counter -> [Decision]
 enumerator [] cnt = []
 enumerator ((Trv c i):ds) cnt = (Trv (cnt + 1) i) : (enumerator ds (cnt + 1))
-enumerator ((Dia c i):ds) cnt = (Dia (cnt + 1) i) : (enumerator ds (cnt + 1))
+enumerator ((Pty c i):ds) cnt = (Pty (cnt + 1) i) : (enumerator ds (cnt + 1))
 enumerator ((Tlk c i):ds) cnt = (Tlk (cnt + 1) i) : (enumerator ds (cnt + 1))
 
 printingProcess :: Game -> Bool -> Bool -> Bool -> [Decision] -> IO ()
@@ -252,7 +244,7 @@ printingProcess (Game m n p ps) dtr ddi dtl (d:ds) = do
       else do
         putStrLn (" " ++ show (Trv c i))
         printingProcess (Game m n p ps) dtr ddi dtl ds 
-    Dia c i -> do
+    Pty c i -> do
       if not ddi
         then do
           putStrLn line3
@@ -271,116 +263,112 @@ printingProcess (Game m n p ps) dtr ddi dtl (d:ds) = do
         putStrLn (" " ++ show c ++ " " ++ ((ps !! n) !! i))
         printingProcess (Game m n p ps) dtr ddi dtl ds 
 
-seek :: Int -> [Decision] -> Game -> IO Game
-seek x [] (Game m n p ps) = return Over
-seek x (d:ds) (Game m n p ps) = do
+decisionSeek :: Int -> [Decision] -> Game -> IO Game
+decisionSeek x [] (Game m n p ps) = return Over
+decisionSeek x (d:ds) (Game m n p ps) = do
   case d of
     Trv c i ->
       if c == x
         then
           return (Game m i p ps)
       else
-        seek x ds (Game m n p ps)
-    Dia c i ->
+        decisionSeek x ds (Game m n p ps)
+    Pty c i ->
       if c == x
         then 
           dialogue (Game m n p ps) (findDialogue [(p !! i)])
       else
-        seek x ds (Game m n p ps)
+        decisionSeek x ds (Game m n p ps)
     Tlk c i ->
       if c == x
         then
           dialogue (Game m n p ps) (findDialogue [((ps !! n) !! i)])
       else
-        seek x ds (Game m n p ps)
+        decisionSeek x ds (Game m n p ps)
 
-multInput :: String -> [Int]
-multInput x = msort (map read (words x) :: [Int])
+multipleInputParse :: String -> [Int]
+multipleInputParse x = msort (map read (words x) :: [Int])
 
-multSeek :: [Int] -> [Decision] -> Game -> [String]
-multSeek [] _ _ = []
-multSeek (x:xs) (d:ds) (Game m n p ps) = do
+multipleInputSeekDecision :: [Int] -> [Decision] -> Game -> [String]
+multipleInputSeekDecision [] _ _ = []
+multipleInputSeekDecision (x:xs) (d:ds) (Game m n p ps) = do
   case d of
     Trv c i ->
-      multSeek (x:xs) ds (Game m n p ps)
-    Dia c i ->
+      multipleInputSeekDecision (x:xs) ds (Game m n p ps)
+    Pty c i ->
       if c == x
         then 
-          (p !! i) : multSeek (xs) ds (Game m n p ps) 
+          (p !! i) : multipleInputSeekDecision (xs) ds (Game m n p ps) 
       else
-        multSeek (x:xs) ds (Game m n p ps)
+        multipleInputSeekDecision (x:xs) ds (Game m n p ps)
     Tlk c i ->
       if c == x
         then
-          ((ps !! n) !! i) : multSeek (xs) ds (Game m n p ps)
+          ((ps !! n) !! i) : multipleInputSeekDecision (xs) ds (Game m n p ps)
       else
-        multSeek (x:xs) ds (Game m n p ps)
+        multipleInputSeekDecision (x:xs) ds (Game m n p ps)
 
 step :: Game -> IO Game
 step (Game m n p ps) = do
   putStrLn (line1 ++ (theDescriptions !! n))
-  printingProcess (Game m n p ps) False False False (enumerator (decisionFunction (Game m n p ps) []) 0)
+  printingProcess (Game m n p ps) False False False (enumerator (decisionsProduction (Game m n p ps) []) 0)
   putStrLn line5
-  x <- stepDecPromptVal (enumerator (decisionFunction (Game m n p ps) []) 0)-- get decision
+  x <- decisionPromptValidation (enumerator (decisionsProduction (Game m n p ps) []) 0)
   endGame <- if length x == 1 
     then do
       if (read x::Int) == 0
         then
           return Over
-      else (seek (read x::Int) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps))
-    else dialogue (Game m n p ps) (findDialogue (multSeek (multInput x) (enumerator (decisionFunction (Game m n p ps) []) 0) (Game m n p ps)))
+      else (decisionSeek (read x::Int) (enumerator (decisionsProduction (Game m n p ps) []) 0) (Game m n p ps))
+    else dialogue (Game m n p ps) (findDialogue (multipleInputSeekDecision (multipleInputParse x) (enumerator (decisionsProduction (Game m n p ps) []) 0) (Game m n p ps)))
   
   return endGame
 
-numberChecker :: String -> Bool
-numberChecker [] = True -- nevermind turns out i've worked around the issue anyway
-numberChecker (s:ss)
-  | isDigit s             = numberChecker ss
+allNumberChecker :: String -> Bool
+allNumberChecker [] = True
+allNumberChecker (s:ss)
+  | isDigit s             = allNumberChecker ss
   | otherwise             = False
 
-stepDecPromptVal :: [Decision] -> IO String
-stepDecPromptVal ds = do
+decisionPromptValidation :: [Decision] -> IO String
+decisionPromptValidation ds = do
   putStr (prompt ++ " ")
   x <- getLine
   if length x >= 1
     then  
       if length x == 1
         then do
-          if  numberChecker x == False || (read x::Int) > length ds || (read x::Int) <= -1
+          if  allNumberChecker x == False || (read x::Int) > length ds || (read x::Int) <= -1
             then do
               putStrLn line6
-              stepDecPromptVal ds 
+              decisionPromptValidation ds 
           else do
             return x
       else do
-        if any (== False) (map numberChecker (words x)) || length (words x) == 1 || not (multValidator (words x) (multEvaluator ds))
+        if any (== False) (map allNumberChecker (words x)) || length (words x) == 1 || not (multipleInputValidation (words x) (multipleInputEvaluator ds))
           then do
             putStrLn line6
-            stepDecPromptVal ds   
+            decisionPromptValidation ds
         else do
           return x
   else do
     putStrLn line6
-    stepDecPromptVal ds
+    decisionPromptValidation ds
 
-multValidator :: [String] -> [Counter] -> Bool
-multValidator [] y = True
-multValidator (x:xs) y
-  | (read x::Int) `elem` y  = multValidator xs y
+multipleInputValidation :: [String] -> [Counter] -> Bool
+multipleInputValidation [] y = True
+multipleInputValidation (x:xs) y
+  | (read x::Int) `elem` y  = multipleInputValidation xs y
   | otherwise   = False
 
-multEvaluator :: [Decision] -> [Counter] -- basically this is just going to take all the counters/IDs so it can have a quantifier applied to it in validator?? ykwim
-multEvaluator []               = []
-multEvaluator ((Trv c i) : ds) = multEvaluator ds
-multEvaluator ((Dia c i) : ds) = c : multEvaluator ds
-multEvaluator ((Tlk c i) : ds) = c : multEvaluator ds
+multipleInputEvaluator :: [Decision] -> [Counter]
+multipleInputEvaluator []               = []
+multipleInputEvaluator ((Trv c i) : ds) = multipleInputEvaluator ds
+multipleInputEvaluator ((Pty c i) : ds) = c : multipleInputEvaluator ds
+multipleInputEvaluator ((Tlk c i) : ds) = c : multipleInputEvaluator ds
 
 game :: IO ()
-game = do
-  firstLoop
-
-firstLoop :: IO ()
-firstLoop = loop start
+game = loop start
   where
     loop :: Game -> IO ()
     loop Over   = return ()
@@ -401,15 +389,15 @@ data Command  = Travel [Int] | Select Party | Talk [Int]
 type Solution = [Command]
 
 talk ::Game -> Dialogue -> [(Game,[Int])]
-talk g d = explorerD g d []
+talk g d = findActions g d []
   where
-    explorerD :: Game -> Dialogue -> [Int] -> [(Game, [Int])]
-    explorerD Over _ _            = [] -- not sure if this'll be necessary as its walkthrough but
-    explorerD g (Action _ ev) is  = [(ev g, is)] -- thank god id functions count as valid events
-    explorerD g (Branch c l r) is = if c g 
-      then explorerD g l is
-      else explorerD g r is
-    explorerD g (Choice _ chs) is = concat [explorerD g d (is ++ [i]) | (i, (sti, d)) <- zip [1..] chs] -- bless lazy evaluation
+    findActions :: Game -> Dialogue -> [Int] -> [(Game, [Int])]
+    findActions Over _ _            = []
+    findActions g (Action _ ev) is  = [(ev g, is)] 
+    findActions g (Branch c l r) is = if c g 
+      then findActions g l is
+      else findActions g r is
+    findActions g (Choice _ chs) is = concat [findActions g d (is ++ [i]) | (i, (sti, d)) <- zip [1..] chs]
 
 nn :: Foldable t => t a -> Bool
 nn = not . null
@@ -439,41 +427,35 @@ select = allPossible
 
 
 travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
-travel m n = [(i, bfs m n i [] [(n, [])]) | i <- [(getMin m)..(getMax m)]]
+travel m n = [(i, breadthFirstSearch m n i [] [(n, [])]) | i <- [(getMinimum m)..(getMaximum m)]]
 
 type Visited = [Int]
 type Path = [Int]
 
-bfs :: Map -> Node -> Node -> Visited -> [(Node, Path)] -> Path
-bfs m i d v [] = []
-bfs m i d v ((curNode, p):f)
+breadthFirstSearch :: Map -> Node -> Node -> Visited -> [(Node, Path)] -> Path
+breadthFirstSearch m i d v [] = []
+breadthFirstSearch m i d v ((curNode, p):f)
   | curNode == d        = reverse p
-  | curNode `elem` v    = bfs m i d v f
+  | curNode `elem` v    = breadthFirstSearch m i d v f
   | otherwise     = 
-      let adj = connected m curNode -- adjacent nodes
-          newV = curNode : v -- appending = O(1) and prepending = O(1) somehow?!
-          neighbourP = [(n, x:p) | (x, n) <- zip [1..] adj, n `notElem` newV] -- enumeration & neighbouring paths
+      let adj = connected m curNode
+          newV = curNode : v 
+          neighbourP = [(n, x:p) | (x, n) <- zip [1..] adj, n `notElem` newV] 
           newF = f ++ neighbourP
-      in bfs m i d newV newF
+      in breadthFirstSearch m i d newV newF
 
-getMin :: Map -> Node
-getMin m = foldr1 min ((map fst m) ++ (map snd m))
+getMinimum :: Map -> Node
+getMinimum m = foldr1 min ((map fst m) ++ (map snd m))
 
-getMax :: Map -> Node
-getMax m = foldr1 max ((map fst m) ++ (map snd m))
+getMaximum :: Map -> Node
+getMaximum m = foldr1 max ((map fst m) ++ (map snd m))
 
 -- terminal data: [(0,1),(0,2),(1,2),(2,3),(2,4),(3,5)]
 -- step (Game theMap 1 [] theCharacters)
 -- ^^ the main example
 
-allSteps :: Game -> [(Solution,Game)] -- WHY WOULD YOU MAP FST LET ME JUST SEE THE WHOLE THING OHHHH MY GODDD
+allSteps :: Game -> [(Solution,Game)] 
 allSteps g = undefined
-
--- selIterator :: [Party] -> Party
--- selIterator [] = []
--- selIterator (p:ps)
---   | findDialogue p 
---   | otherwise = selIterator ps
 
 solve :: Game -> Solution
 solve = undefined
@@ -535,7 +517,7 @@ theDialogues :: [(Party,Dialogue)]
 theDialogues = let
   always _ = True
   end str  = Choice str []
-
+  
   isconn  _ _  Over           = False
   isconn  i j (Game m _ _ _ ) = elem i (connected m j)
 
