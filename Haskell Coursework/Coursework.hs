@@ -38,7 +38,7 @@ type Event     = Game -> Game
 testGame :: Node -> Game
 testGame i = Game [(0,1)] i ["Russell"] [[],["Brouwer","Heyting"]]
 
-------------------------- Assignment 1: The game world
+------------------------- Assignment 1: The game worldwould it not be paddington
 
 connected :: Map -> Node -> [Node]
 connected [] n = []
@@ -66,38 +66,38 @@ disconnect ni nj ms
         | otherwise                                                             = m : disconnecting ni nj ms
 
 add :: Party -> Event 
-add _ Over              = Over
-add [] (Game m n p ps)  = Game m n p ps
+add _   Over              = Over
+add [] (Game m n p ps)    = Game m n p ps
 add (x:xs) (Game m n p ps)
   | not (x `elem` p)  = add xs (Game m n (insert x p) ps)
   | otherwise         = add xs (Game m n p ps)
 
 addAt :: Node -> Party -> Event
-addAt _ _ Over                = Over
-addAt _ [] (Game m n pj ps)   = Game m n pj ps
-addAt nd pi (Game m n pj ps)  = Game m n pj (goToLocation 0 nd pi ps)
+addAt _  _   Over             = Over
+addAt _  [] (Game m n pj ps)  = Game m n pj ps
+addAt n' p' (Game m n pj ps)  = Game m n pj (alterAtLocation 0 n' p' ps)
 
-goToLocation :: Int -> Node -> Party -> [Party] -> [Party]
-goToLocation _ _ [] (p:ps) = p:ps
-goToLocation o nd pi (p:ps)
-  | nd == 0 && o == 0 = (p ++ pi) : ps
-  | nd == 0 && o == 1 = (p \\ pi) : ps
-  | otherwise         = p : goToLocation o (nd - 1) pi ps
+alterAtLocation :: Int -> Node -> Party -> [Party] -> [Party]
+alterAtLocation _ _  []  (p:ps) = p:ps
+alterAtLocation o n' p' (p:ps)
+  | n' == 0 && o == 0 = (p ++ p') : ps
+  | n' == 0 && o == 1 = (p \\ p') : ps
+  | otherwise         =  p        : alterAtLocation o (n' - 1) p' ps
 
 addHere :: Party -> Event
-addHere pi (Game m n pj ps) = addAt n pi (Game m n pj ps)
+addHere p' (Game m n pj ps) = addAt n p' (Game m n pj ps)
 
 remove :: Party -> Event
-remove pi Over             = Over
-remove pi (Game m n pj ps) = Game m n (pj \\ pi) ps
+remove p'  Over            = Over
+remove p' (Game m n pj ps) = Game m n (pj \\ p') ps
 
 removeAt :: Node -> Party -> Event
-removeAt _ _ Over               = Over
-removeAt nd pi (Game m n pj ps) = Game m n pj (goToLocation 1 nd pi ps)
+removeAt _  _   Over            = Over
+removeAt n' p' (Game m n pj ps) = Game m n pj (alterAtLocation 1 n' p' ps)
 
 removeHere :: Party -> Event
-removeHere _ Over               = Over
-removeHere pi (Game m n pj ps)  = removeAt n pi (Game m n pj ps)
+removeHere _   Over             = Over
+removeHere p' (Game m n pj ps)  = removeAt n p' (Game m n pj ps)
 
 ------------------------- Assignment 2: Dialogues
 
@@ -133,7 +133,7 @@ dialogue g (Action st ev) =
 
 dialogue g (Branch c di dj) =
   do
-    if c g == True
+    if c g
       then
         dialogue g di
     else
@@ -186,8 +186,8 @@ findDialogue :: Party -> Dialogue
 findDialogue p = searchTheDialogues p theDialogues
   where
     searchTheDialogues :: Party -> [(Party, Dialogue)] -> Dialogue
-    searchTheDialogues [] _   = Action line0 id
-    searchTheDialogues p []   = Action line0 id
+    searchTheDialogues [] _   = Choice line0 []
+    searchTheDialogues p []   = Choice line0 []
     searchTheDialogues p xs
       | msort (fst (head xs)) == msort (p)  = snd (head xs)
       | otherwise                           = searchTheDialogues p (tail xs)
@@ -200,27 +200,29 @@ line3 = "With you are:"
 line4 = "You can see:"
 line5 = "What will you do?"
 
-type Counter = Int
-data Decision = Trv Counter Int | Pty Counter Int | Tlk Counter Int 
+type Counter  = Int
+data Decision = Trv Counter Int 
+              | Pty Counter Int 
+              | Tlk Counter Int 
 instance Show Decision where
   show (Trv c i) = show c ++ " " ++ (theLocations !! i)
   show (Pty c i) = show c ++ " " ++ show i
   show (Tlk c i) = show c ++ " " ++ show i
 
 decisionsProduction :: Game -> [Decision] -> [Decision]
-decisionsProduction (Game m n p ps) ds = (tokenizeConns (connected m n) 0 (tokenizeParty p p 0 (tokenizeAtLocation (ps !! n) (ps !! n) 0 [])))
+decisionsProduction (Game m n p ps) ds = (tokenizeConnections (connected m n) 0 (tokenizeParty p p 0 (tokenizeAtLocation (ps !! n) (ps !! n) 0 [])))
 
-tokenizeConns :: [Node] -> Counter -> [Decision] -> [Decision]
-tokenizeConns [] c ds     = ds
-tokenizeConns (m:ms) c ds = (Trv c m) : (tokenizeConns ms 0 (ds))
+tokenizeConnections :: [Node] -> Counter -> [Decision] -> [Decision]
+tokenizeConnections []     c ds = ds
+tokenizeConnections (m:ms) c ds = (Trv c m) : (tokenizeConnections ms 0 (ds))
 
 tokenizeParty :: Party -> Party -> Counter -> [Decision] -> [Decision]
 tokenizeParty [] pj c ds = ds
-tokenizeParty pi pj c ds = (Pty c (fromJust $ elemIndex (head pi) pj)) : (tokenizeParty (tail pi) pj 0 ds)
+tokenizeParty p' pj c ds = (Pty c (fromJust $ elemIndex (head p') pj)) : (tokenizeParty (tail p') pj 0 ds)
 
 tokenizeAtLocation :: Party -> Party -> Counter -> [Decision] -> [Decision]
 tokenizeAtLocation [] pj c ds = ds
-tokenizeAtLocation pi pj c ds = (Tlk c (fromJust $ elemIndex (head pi) pj)) : (tokenizeAtLocation (tail pi) pj 0 ds)
+tokenizeAtLocation p' pj c ds = (Tlk c (fromJust $ elemIndex (head p') pj)) : (tokenizeAtLocation (tail p') pj 0 ds)
 
 enumerator :: [Decision] -> Counter -> [Decision]
 enumerator []             enum = []
@@ -312,23 +314,23 @@ step (Game m n p ps) = do
   putStrLn line5
   x <- decisionPromptValidation (enumerator (decisionsProduction (Game m n p ps) []) 0)
   endGame <- if length x == 1 
-    then do
-      if (read x::Int) == 0
-        then
-          return Over
-      else (decisionSeek (read x::Int) (enumerator (decisionsProduction (Game m n p ps) []) 0) (Game m n p ps))
-    else dialogue (Game m n p ps) (findDialogue (multipleInputSeekDecision (multipleInputParse x) (enumerator (decisionsProduction (Game m n p ps) []) 0) (Game m n p ps)))
+              then do
+                if (read x::Int) == 0
+                  then
+                    return Over
+                else (decisionSeek (read x::Int) (enumerator (decisionsProduction (Game m n p ps) []) 0) (Game m n p ps))
+             else dialogue (Game m n p ps) (findDialogue (multipleInputSeekDecision (multipleInputParse x) (enumerator (decisionsProduction (Game m n p ps) []) 0) (Game m n p ps)))
   
   return endGame
 
 game :: IO ()
-game = loop start
+game = mainLoop start
   where
-    loop :: Game -> IO ()
-    loop Over   = return ()
-    loop g      = do
+    mainLoop :: Game -> IO ()
+    mainLoop Over   = return ()
+    mainLoop g      = do
       next <- step g
-      loop next
+      mainLoop next
 
 
 ------------------------- Assignment 4: Safety upgrades
@@ -392,8 +394,8 @@ talk ::Game -> Dialogue -> [(Game,[Int])]
 talk g d = findActions g d []
   where
     findActions :: Game -> Dialogue -> [Int] -> [(Game, [Int])]
-    findActions Over _          _   = []
-    findActions g (Action _ ev) is  = [(ev g, is)] 
+    findActions Over _           _  = []
+    findActions g (Action _ ev)  is = [(ev g, is)] 
     findActions g (Branch c l r) is = if c g 
       then findActions g l is
       else findActions g r is
@@ -411,23 +413,23 @@ allPossible (Game m n p ps) = powerset ( concat ( filter nn [p] ++ (filter nn [(
 select :: Game -> [Party]
 select = allPossible
 
-travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
+travel :: Map -> Node -> [(Node,[Int])]
 travel m n = [(i, breadthFirstSearch m n i [] [(n, [])]) | i <- [(getMinimum m)..(getMaximum m)]]
 
-type Visited = [Int]
-type Path = [Int]
+type Visited  = [Int]
+type Path     = [Int]
 
 breadthFirstSearch :: Map -> Node -> Node -> Visited -> [(Node, Path)] -> Path
 breadthFirstSearch m i d v [] = []
 breadthFirstSearch m i d v ((curNode, p):f)
   | curNode == d        = reverse p
   | curNode `elem` v    = breadthFirstSearch m i d v f
-  | otherwise     = 
-      let adj = connected m curNode
-          newV = curNode : v 
-          neighbourP = [(n, x:p) | (x, n) <- zip [1..] adj, n `notElem` newV] 
-          newF = f ++ neighbourP
-      in breadthFirstSearch m i d newV newF
+  | otherwise           = 
+        let adj         = connected m curNode
+            newV        = curNode : v 
+            neighbourP  = [(n, x:p) | (x, n) <- zip [1..] adj, n `notElem` newV] 
+            newF        = f ++ neighbourP
+        in breadthFirstSearch m i d newV newF
 
 getMinimum :: Map -> Node
 getMinimum m = foldr1 min ((map fst m) ++ (map snd m))
