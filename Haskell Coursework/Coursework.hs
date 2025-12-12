@@ -190,9 +190,8 @@ findDialogue p = searchTheDialogues p theDialogues
     searchTheDialogues [] _   = Action line0 id
     searchTheDialogues p []   = Action line0 id
     searchTheDialogues p xs
-      | all (`elem` (fst (head xs))) p    = snd (head xs)
-      | otherwise                         = searchTheDialogues p (tail xs)
-
+      | msort (fst (head xs)) == msort (p)  = snd (head xs)
+      | otherwise                     = searchTheDialogues p (tail xs)
 
 ------------------------- Assignment 3: The game loop
 
@@ -424,7 +423,6 @@ select = allPossible
 --       cycle p xs
 --         | all (`elem` (fst (head xs))) p    = p
 --         | otherwise                         = cycle p (tail xs)
-
 
 travel :: Map -> Node -> [(Node,[Int])] -- it needs to return the indexes rather than the actual nodes to visit
 travel m n = [(i, breadthFirstSearch m n i [] [(n, [])]) | i <- [(getMinimum m)..(getMaximum m)]]
