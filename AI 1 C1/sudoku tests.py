@@ -90,17 +90,12 @@ class RowH(Node):
 """
 possible naming convention for column headers:
 
-
 """
-
-class RowHeaders:
-    pass
 
 def sudoku_solver(sudoku):
     unsolvable = False # unsolvability can only be determined in two manners for sudoku: more than one solution found / poorly designed clues
     universe = {1,2,3,4,5,6,7,8,9} # each cell's given a subset of the universe. the whole point of the search will hopefully be erasing
     clues = 0 # this is a clue tracker, there's a neat little trick where if there are any less than 17 clues, the sudoku is immediately 'unsolvable'
-
     
     
     return None
