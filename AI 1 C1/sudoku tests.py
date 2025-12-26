@@ -21,32 +21,78 @@ hSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Y
 
 """
 important notes:
-constraints applied?
-- row
-- column
-- square
+constraints applied? 324 of them
+- 81 row
+- 81 column
+- 81 square
+- 81 number
+
+and... 729 placements for the numbers. goodness.
+so 324 columns, 729 rows.
 
 """
 
-class Cell:
-    domain = {1, 2, 3, 4, 5, 6, 7, 8, 9}
-    def __init__ (self, row, column, square):
-        self.row = row
-        self.column = column
-        self.square = square
+# old code, will delete after next commit:
+# class Cell:
+#     domain = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+#     def __init__ (self, row, column, square):
+#         self.row = row
+#         self.column = column
+#         self.square = square
+
+# exploreMatrix = [[],[],[],[],[],[],[],[],[]]
+    # for i in sudoku:
+    #     for j in sudoku:
+    #         temp = Cell(i + 1, j + 1, ((j + 1) // 3) + ((i + 1) // 3))
+    #         exploreMatrix.insert(i, temp)
+    # print(exploreMatrix)
+class Node: # so this'll just be a 1 or 0. it will connect to its column, to its column, to whatever's... man this is so strange
+    def __init__ (self):
+        self.l = self.r = self.u = self.d = self # they all point to themselves. will need to implement this somehow
+        self.header = None # this will belong to a column, a constraint
+
+    def reconnect(self):
+        self.l.r = self
+        self.r.l = self
+        self.u.d = self
+        self.d.u = self
+
+    def disconnect(self):
+        self.l.r = self.r
+        self.r.l = self.l
+        self.u.d = self.d
+        self.d.u = self.u
+
+class ColumnH(Node): 
+    def __init__ (self, colName):
+        super().__init__()
+        self.column = colName
+    def columnName (self):
+        print(self.column)
+    
+
+class RowH(Node):
+    def __init__ (self, rowName):
+        super().__init__()
+        self.row = rowName
+
+
+"""
+possible naming convention for column headers:
+
+
+"""
+
+class RowHeaders:
+    pass
 
 def sudoku_solver(sudoku):
     unsolvable = False # unsolvability can only be determined in two manners for sudoku: more than one solution found / poorly designed clues
     universe = {1,2,3,4,5,6,7,8,9} # each cell's given a subset of the universe. the whole point of the search will hopefully be erasing
     clues = 0 # this is a clue tracker, there's a neat little trick where if there are any less than 17 clues, the sudoku is immediately 'unsolvable'
 
-    exploreMatrix = [[],[],[],[],[],[],[],[],[]]
-    for i in sudoku:
-        for j in sudoku:
-            temp = Cell(i + 1, j + 1, ((j + 1) // 3) + ((i + 1) // 3))
-            exploreMatrix.insert(i, temp)
-
-    print(exploreMatrix)
+    
+    
     return None
 
 # raise NotImplementedError()
