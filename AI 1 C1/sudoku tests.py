@@ -11,14 +11,14 @@ eSLPath = "/home/bitchass/Documents/Homework/Exercise-Sheets-Year-1/AI 1 C1/sudo
 mSLPath = "/home/bitchass/Documents/Homework/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/medium_solution.npy"
 hSLPath = "/home/bitchass/Documents/Homework/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/hard_solution.npy"
 
-# vePath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/very_easy_puzzle.npy"
-# ePath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/easy_puzzle.npy"
-# mPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/medium_puzzle.npy"
-# hPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/hard_puzzle.npy"
-# veSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/very_easy_solution.npy"
-# eSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/easy_solution.npy"
-# mSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/medium_solution.npy"
-# hSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/hard_solution.npy"
+vePath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/very_easy_puzzle.npy"
+ePath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/easy_puzzle.npy"
+mPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/medium_puzzle.npy"
+hPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/hard_puzzle.npy"
+veSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/very_easy_solution.npy"
+eSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/easy_solution.npy"
+mSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/medium_solution.npy"
+hSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/hard_solution.npy"
 
 """
     Input
@@ -42,24 +42,16 @@ so 324 columns, 729 rows.
 
 """
 
-# old code, will delete after next commit:
-# class Cell:
-#     domain = {1, 2, 3, 4, 5, 6, 7, 8, 9}
-#     def __init__ (self, row, column, square):
-#         self.row = row
-#         self.column = column
-#         self.square = square
-
-# exploreMatrix = [[],[],[],[],[],[],[],[],[]]
-    # for i in sudoku:
-    #     for j in sudoku:
-    #         temp = Cell(i + 1, j + 1, ((j + 1) // 3) + ((i + 1) // 3))
-    #         exploreMatrix.insert(i, temp)
-    # print(exploreMatrix)
 class Node: # so this'll just be a 1 or 0. it will connect to its column, to its column, to whatever's... man this is so strange
     def __init__ (self):
         self.l = self.r = self.u = self.d = self # they all point to themselves. will need to implement this somehow
         self.header = None # this will belong to a column, a constraint
+
+    def newConnect(self, one, two, three, four): # L R U D
+        self.l = one if one != None else self
+        self.r = two if two != None else self
+        self.u = three if three != None else self
+        self.d = four if four != None else self
 
     def reconnect(self):
         self.l.r = self
@@ -103,7 +95,7 @@ def sudoku_solver(sudoku):
 # raise NotImplementedError()
 
 # CHECKING environment:
-sudoku = np.load(veLPath)
+sudoku = np.load(vePath)
 # solutions = np.load(veSPath)
 # print()
 # print("First sudoku:")
