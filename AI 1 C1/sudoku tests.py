@@ -48,24 +48,6 @@ class Node: # so this'll just be a 1 or 0. it will connect to its column, to its
         self.header = None # this will belong to a column, a constraint
         self.row = None # this is gonna be a pain in the arse.
 
-    # def newConnect(self, one, two, three, four): # L R U D
-    #     self.l = one if one != None else self
-    #     self.r = two if two != None else self
-    #     self.u = three if three != None else self
-    #     self.d = four if four != None else self
-    
-    # def reconnect(self):
-    #     self.l.r = self
-    #     self.r.l = self
-    #     self.u.d = self
-    #     self.d.u = self
-
-    # def disconnect(self):
-    #     self.l.r = self.r
-    #     self.r.l = self.l
-    #     self.u.d = self.d
-    #     self.d.u = self.u
-
     def hrztCover(self): 
         self.l.r = self.r
         self.r.l = self.l
@@ -78,8 +60,6 @@ class Node: # so this'll just be a 1 or 0. it will connect to its column, to its
     def vertUncover(self):
         self.u.d = self
         self.d.u = self
-        
-
 
 class ColumnN(Node): 
     def __init__ (self, colName):
@@ -121,37 +101,85 @@ class DLX:
         self.cRHeader = ColumnN("ROOT") # stores the root. cR = control row. wording has been used to minimise confusion between words between classes
         self.cRCols = {} # stores columns
 
-        for n in columns:
-            tempCol = ColumnN(n)
-            self.cRCols[n] = tempCol
+        for c in columns:
+            tempCol = ColumnN(c)
+            self.cRCols[c] = tempCol
 
             tempCol.r = self.cRHeader
-            tempCol.l = self.cRHeader.left
-            
-            self.cRHeader.l.r = tempCol
-            self.cRHeader.l = tempCol
+            tempCol.l = self.cRHeader.l # crheader.l shouuuld be either, itself, or the most recently added column node
 
-# class RowH(Node):
-#     def __init__ (self, rowName):
-#         super().__init__()
-#         self.row = rowName
+            self.cRHeader.l.r = tempCol # connect last connected with new addition
+            self.cRHeader.l = tempCol # loop root around
+    
+    def addRow (self, rowN, colConns):
+        nodesToAdd = [] # to keep track
+        for c in colConns:
+            curCol = self.cRCols[c] # seek and transform into an obj
+            curNode = Node()
 
+
+            curNode.header = curCol
+            curNode.row = rowN
+
+            curNode.d = curCol
+            curNode.u = curCol.u
+
+            # vertical column connection
+            curCol.u.d = curNode
+            curCol.u = curNode
+            curCol.length += 1
+
+            nodesToAdd.append(curNode)
+
+        for i in range(len(nodesToAdd)):
+            nodesToAdd[i].r = nodesToAdd[(i + 1) % len(nodesToAdd)] # linking operation for the nodes on the row
+            nodesToAdd[i].l = nodesToAdd[(i - 1) % len(nodesToAdd)]
+
+        
 
 """
 possible naming convention for column headers:
 1nm <- 1 = Row Constraint, N = Row, M = Number
 2nm <- 2 = Col... same as above
-3nm <- 3 = Square... same as above
-4nm <- 4 = Exact cell, 
+3nm <- 3 = Square... same as above 
+4nm <- 4 = Fill, m = cell location, does it have a number?
+
+row naming convention:
+nMiMj = n is the number, (mi, mj) is the cell location. these are placements, every single one will have to have at least 4 1s.
 
 """
 
 def sudoku_solver(sudoku):
     unsolvable = False # unsolvability can only be determined in two manners for sudoku: more than one solution found / poorly designed clues
-    universe = {1,2,3,4,5,6,7,8,9} # each cell's given a subset of the universe. the whole point of the search will hopefully be erasing
+    # universe = {1,2,3,4,5,6,7,8,9} # each cell's given a subset of the universe. the whole point of the search will hopefully be erasing
     clues = 0 # this is a clue tracker, there's a neat little trick where if there are any less than 17 clues, the sudoku is immediately 'unsolvable'
+    totalColumns = []
+    for i in range (111,200):
+        if i % 10 != 0:
+            totalColumns.append(i)
+            totalColumns.append(i + 100)
+            totalColumns.append(i + 200)
+            totalColumns.append(i + 300)
+    # print(mainMatrix.cRCols.keys())
+    totalColumns.sort()
+    mainMatrix = DLX(totalColumns)
+    # rowsToAdd = [] # this will be reduced as rows are introduced
+    for row in range(9):
+        for col in range(9):
+            if sudoku[row][col] != 0:
+                # these aren't technically row and col coordinates. please ignore that.
+                trueRow = row + 1 # actual one indexed
+                trueCol = col + 1 # don't forget that its zero indexed but you're handling it as one indexed
+                box = ((row // 3) * 3 + (col // 3)) + 1
+                num = sudoku[row][col]
+                rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
+                rowConstraintCol = f"1{trueRow}{num}"
+                colConstraintCol = f"2{trueCol}{num}"
+                squareConstraintCol = f"3{box}{num}"
+                fillConstraintCol = f"4{trueRow}{trueCol}"
+                mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
     
-    
+
     return None
 
 # raise NotImplementedError()
