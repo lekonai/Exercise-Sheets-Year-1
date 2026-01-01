@@ -208,23 +208,12 @@ def sudoku_solver(sudoku):
             totalColumns.append(i + 100)
             totalColumns.append(i + 200)
             totalColumns.append(i + 300)
-    # print(mainMatrix.cRCols.keys())
+
     totalColumns.sort()
     mainMatrix = DLX(totalColumns)
-    # rowsToAdd = [] # this will be reduced as rows are introduced
+
     for row in range(9):
         for col in range(9):
-            # if sudoku[row][col] != 0:
-            #     trueRow = row + 1 # actual one indexed
-            #     trueCol = col + 1 # don't forget that its zero indexed but you're handling it as one indexed
-            #     box = ((row // 3) * 3 + (col // 3)) + 1
-            #     num = sudoku[row][col]
-            #     rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
-            #     rowConstraintCol = f"1{trueRow}{num}"
-            #     colConstraintCol = f"2{trueCol}{num}"
-            #     squareConstraintCol = f"3{box}{num}"
-            #     fillConstraintCol = f"4{trueRow}{trueCol}"
-            #     mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
                 trueRow = row + 1 # actual one indexed
                 trueCol = col + 1 # don't forget that its zero indexed but you're handling it as one indexed
                 box = ((row // 3) * 3 + (col // 3)) + 1
@@ -245,10 +234,12 @@ def sudoku_solver(sudoku):
                         squareConstraintCol = f"3{box}{num}"
                         fillConstraintCol = f"4{trueRow}{trueCol}"
                         mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
-    print(mainMatrix.cRCols.keys())
+    
     print("pre solve")
+    # print(mainMatrix.cRCols.keys())
     solved = mainMatrix.KAX([])
-
+    # solved.sort() # only here for debug
+    # print(solved)
     print("done")
     return None
 
@@ -259,11 +250,11 @@ sudoku = np.load(veLPath)
 # solutions = np.load(veSPath)
 # print()
 # print("First sudoku:")
-# print(sudoku[0], "\n")
+print(sudoku[0], "\n")
 # print("Solution of first sudoku:")
 # print(solutions[0])
 
 startTime = t.process_time()
 sudoku_solver(sudoku[0])
 endTime = t.process_time()
-
+print(endTime - startTime)
