@@ -47,8 +47,7 @@ class Node: # so this'll just be a 1 or 0. it will connect to its column, to its
         self.l = self.r = self.u = self.d = self # they all point to themselves. will need to implement this somehow
         self.header = None # this will belong to a column, a constraint
         self.row = None # this is gonna be a pain in the arse.
-
-    def hrztCover(self): 
+    def hrztCover(self): # the fact cover is remove and uncover is add feels weird goodness
         self.l.r = self.r
         self.r.l = self.l
     def vertCover(self):
@@ -77,23 +76,23 @@ class ColumnN(Node):
         self.hrztCover()
         i = self.d
         while i != self:
-            j = self.r
+            j = i.r
             while j != i: 
                 j.vertCover()
                 j.header.length -= 1
                 j = j.r
             i = i.d
+
     def fullConnect (self): # algorithm x related
         # uncover!
         i = self.u
         while i != self:
-            j = self.l
+            j = i.l
             while j != i: 
                 j.header.length += 1
                 j.vertUncover()
                 j = j.l
             i = i.u
-
         self.hrztUncover() # nothing has to be done here as the relation of course still exists
         
 class DLX:
@@ -117,7 +116,6 @@ class DLX:
             curCol = self.cRCols[c] # seek and transform into an obj
             curNode = Node()
 
-
             curNode.header = curCol
             curNode.row = rowN
 
@@ -134,6 +132,56 @@ class DLX:
         for i in range(len(nodesToAdd)):
             nodesToAdd[i].r = nodesToAdd[(i + 1) % len(nodesToAdd)] # linking operation for the nodes on the row
             nodesToAdd[i].l = nodesToAdd[(i - 1) % len(nodesToAdd)]
+
+    def mrvHeuristic(self): # get column of MRV
+        minCol = None
+        minLength = float('inf')
+
+        curCol = self.cRHeader.r
+        while curCol != self.cRHeader: # explore control row until it reaches itself
+            if curCol.length < minLength:
+                minCol = curCol
+                minLength = curCol.length
+            curCol = curCol.r
+        
+        return minCol
+    
+    def KAX(self, solution):
+        # base case
+        if self.cRHeader.r == self.cRHeader:
+            return solution[:] # why doesn't pass by value exist 
+        
+        curCol = self.mrvHeuristic()
+        if curCol.length == 0:
+            return None # and then it should backtrack as its a recursive algorithm?
+        
+        curCol.fullDisconnect()
+
+        curRow = curCol.d
+        while curRow != curCol:
+            solution.append(curRow.row) # get the names, will have to reencode properly but this is easiest way of getting all IDs
+
+            coverNodes = curRow.r
+            while coverNodes != curRow:
+                coverNodes.header.fullDisconnect()
+                coverNodes = coverNodes.r
+            
+            nextSolution = self.KAX(solution)
+            if nextSolution != None:
+                curCol.fullConnect()
+                return nextSolution # recursion! keep covering and covering until you find no more to cover, then we just bind it all together again
+            
+            uncoverNodes = curRow.l
+            while uncoverNodes != curRow:
+                uncoverNodes.header.fullConnect()
+                uncoverNodes = uncoverNodes.l # basically just the full reverse/inverse of the cover 
+
+            solution.pop() # this aint no stack hahahahahahaahahahhahah, python freaked up man
+            curRow = curRow.d
+        curCol.fullConnect()
+        return None
+            
+            
 
         
 
@@ -166,26 +214,48 @@ def sudoku_solver(sudoku):
     # rowsToAdd = [] # this will be reduced as rows are introduced
     for row in range(9):
         for col in range(9):
-            if sudoku[row][col] != 0:
-                # these aren't technically row and col coordinates. please ignore that.
+            # if sudoku[row][col] != 0:
+            #     trueRow = row + 1 # actual one indexed
+            #     trueCol = col + 1 # don't forget that its zero indexed but you're handling it as one indexed
+            #     box = ((row // 3) * 3 + (col // 3)) + 1
+            #     num = sudoku[row][col]
+            #     rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
+            #     rowConstraintCol = f"1{trueRow}{num}"
+            #     colConstraintCol = f"2{trueCol}{num}"
+            #     squareConstraintCol = f"3{box}{num}"
+            #     fillConstraintCol = f"4{trueRow}{trueCol}"
+            #     mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
                 trueRow = row + 1 # actual one indexed
                 trueCol = col + 1 # don't forget that its zero indexed but you're handling it as one indexed
                 box = ((row // 3) * 3 + (col // 3)) + 1
                 num = sudoku[row][col]
-                rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
-                rowConstraintCol = f"1{trueRow}{num}"
-                colConstraintCol = f"2{trueCol}{num}"
-                squareConstraintCol = f"3{box}{num}"
-                fillConstraintCol = f"4{trueRow}{trueCol}"
-                mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
-    
+                if num != 0:
+                    rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
+                    rowConstraintCol = f"1{trueRow}{num}"
+                    colConstraintCol = f"2{trueCol}{num}"
+                    squareConstraintCol = f"3{box}{num}"
+                    fillConstraintCol = f"4{trueRow}{trueCol}"
+                    mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
+                else:
+                    for i in range (1,10):
+                        num = i
+                        rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
+                        rowConstraintCol = f"1{trueRow}{num}"
+                        colConstraintCol = f"2{trueCol}{num}"
+                        squareConstraintCol = f"3{box}{num}"
+                        fillConstraintCol = f"4{trueRow}{trueCol}"
+                        mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
+    print(mainMatrix.cRCols.keys())
+    print("pre solve")
+    solved = mainMatrix.KAX([])
 
+    print("done")
     return None
 
 # raise NotImplementedError()
 
 # CHECKING environment:
-sudoku = np.load(vePath)
+sudoku = np.load(veLPath)
 # solutions = np.load(veSPath)
 # print()
 # print("First sudoku:")
