@@ -235,15 +235,6 @@ def sudoku_solver(sudoku):
     solvedUnencoded = mainMatrix.KAX([])
     # solved.sort() # only here for debug
     
-    # def encode(solved):
-    #     # this is clunky but *9 doesn't work for some reason, not a fan of python initialisation
-    #     endSolved = [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]]
-    #     for p in solved:
-    #         converted = str(p)
-    #         # print(converted) # debug
-    #         endSolved[int(converted[1]) - 1][int(converted[2]) - 1] = int(converted[0])
-    #     return endSolved
-
     def encode(solved):
         endSolved = np.zeros((9,9))
         for p in solved:
