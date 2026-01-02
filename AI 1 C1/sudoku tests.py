@@ -35,10 +35,10 @@ constraints applied? 324 of them
 - 81 row
 - 81 column
 - 81 square
-- 81 number
+- 81 (has) number
 
-and... 729 placements for the numbers. goodness.
-so 324 columns, 729 rows.
+and... 729 placements for the numbers.
+so 324 columns, and up to ... 576 possible placements? if given minimum amount of clues (17)
 
 """
 
@@ -111,34 +111,34 @@ class DLX:
             self.cRHeader.l = tempCol # loop root around
     
     def addRow (self, rowN, colConns):
-        nodesToAdd = [] # to keep track
+        nodesToLink = [] # to link later
         for c in colConns:
-            curCol = self.cRCols[c] # seek and transform into an obj
+            curCol = self.cRCols[c] # seek dictionary
             curNode = Node()
 
             curNode.header = curCol
             curNode.row = rowN
-
+            
+            # vertical column connection
             curNode.d = curCol
             curNode.u = curCol.u
-
-            # vertical column connection
             curCol.u.d = curNode
             curCol.u = curNode
             curCol.length += 1
 
-            nodesToAdd.append(curNode)
+            nodesToLink.append(curNode)
 
-        for i in range(len(nodesToAdd)):
-            nodesToAdd[i].r = nodesToAdd[(i + 1) % len(nodesToAdd)] # linking operation for the nodes on the row
-            nodesToAdd[i].l = nodesToAdd[(i - 1) % len(nodesToAdd)]
+        for i in range(len(nodesToLink)):
+            nodesToLink[i].r = nodesToLink[(i + 1) % len(nodesToLink)] # linking operation for the nodes on the row
+            nodesToLink[i].l = nodesToLink[(i - 1) % len(nodesToLink)] # thank you a level 
 
-    def mrvHeuristic(self): # get column of MRV
+    def mrvHeuristic(self): 
+        # find column with least rows attached
         minCol = None
         minLength = float('inf')
 
         curCol = self.cRHeader.r
-        while curCol != self.cRHeader: # explore control row until it reaches itself
+        while curCol != self.cRHeader:
             if curCol.length < minLength:
                 minCol = curCol
                 minLength = curCol.length
@@ -147,13 +147,13 @@ class DLX:
         return minCol
     
     def KAX(self, solution):
-        # base case
-        if self.cRHeader.r == self.cRHeader:
+        # base cases
+        if self.cRHeader.r == self.cRHeader: # this is when a solution's reached, ideally
             return solution[:] # why doesn't pass by value exist 
         
         curCol = self.mrvHeuristic()
         if curCol.length == 0:
-            return None # and then it should backtrack as its a recursive algorithm?
+            return None # break out
         
         curCol.fullDisconnect()
 
@@ -169,21 +169,19 @@ class DLX:
             nextSolution = self.KAX(solution)
             if nextSolution != None:
                 curCol.fullConnect()
-                return nextSolution # recursion! keep covering and covering until you find no more to cover, then we just bind it all together again
+                return nextSolution # reattach and then proceed with the next call
             
+            # this is the back tracking step: if we end up in an unrecoverable spot we just uncover again and the call stack breaks up until there's 
+            # a "next solution"
             uncoverNodes = curRow.l
             while uncoverNodes != curRow:
                 uncoverNodes.header.fullConnect()
-                uncoverNodes = uncoverNodes.l # basically just the full reverse/inverse of the cover 
-
-            solution.pop() # this aint no stack hahahahahahaahahahhahah, python freaked up man
+                uncoverNodes = uncoverNodes.l 
+            
+            solution.pop() # partial solution is approved so remove it
             curRow = curRow.d
         curCol.fullConnect()
         return None
-            
-            
-
-        
 
 """
 possible naming convention for column headers:
@@ -198,9 +196,6 @@ nMiMj = n is the number, (mi, mj) is the cell location. these are placements, ev
 """
 
 def sudoku_solver(sudoku):
-    unsolvable = False # unsolvability can only be determined in two manners for sudoku: more than one solution found / poorly designed clues
-    # universe = {1,2,3,4,5,6,7,8,9} # each cell's given a subset of the universe. the whole point of the search will hopefully be erasing
-    clues = 0 # this is a clue tracker, there's a neat little trick where if there are any less than 17 clues, the sudoku is immediately 'unsolvable'
     totalColumns = []
     for i in range (111,200):
         if i % 10 != 0:
@@ -208,10 +203,8 @@ def sudoku_solver(sudoku):
             totalColumns.append(i + 100)
             totalColumns.append(i + 200)
             totalColumns.append(i + 300)
-
     totalColumns.sort()
     mainMatrix = DLX(totalColumns)
-
     for row in range(9):
         for col in range(9):
                 trueRow = row + 1 # actual one indexed
@@ -220,6 +213,7 @@ def sudoku_solver(sudoku):
                 num = sudoku[row][col]
                 if num != 0:
                     rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
+                    # print(f"inputting {rowName}") # debug
                     rowConstraintCol = f"1{trueRow}{num}"
                     colConstraintCol = f"2{trueCol}{num}"
                     squareConstraintCol = f"3{box}{num}"
@@ -229,24 +223,46 @@ def sudoku_solver(sudoku):
                     for i in range (1,10):
                         num = i
                         rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
+                        # print(f"inputting {rowName}") # debug
                         rowConstraintCol = f"1{trueRow}{num}"
                         colConstraintCol = f"2{trueCol}{num}"
                         squareConstraintCol = f"3{box}{num}"
                         fillConstraintCol = f"4{trueRow}{trueCol}"
                         mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
     
-    print("pre solve")
+    # print("pre solve") # debug
     # print(mainMatrix.cRCols.keys())
-    solved = mainMatrix.KAX([])
+    solvedUnencoded = mainMatrix.KAX([])
     # solved.sort() # only here for debug
-    # print(solved)
-    print("done")
-    return None
+    
+    # def encode(solved):
+    #     # this is clunky but *9 doesn't work for some reason, not a fan of python initialisation
+    #     endSolved = [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    #     for p in solved:
+    #         converted = str(p)
+    #         # print(converted) # debug
+    #         endSolved[int(converted[1]) - 1][int(converted[2]) - 1] = int(converted[0])
+    #     return endSolved
+
+    def encode(solved):
+        endSolved = np.zeros((9,9))
+        for p in solved:
+            converted = str(p)
+            # print(converted) # debug
+            endSolved[int(converted[1]) - 1][int(converted[2]) - 1] = int(converted[0])
+        return endSolved
+
+    solvedEncoded = encode(solvedUnencoded)
+
+    print(solvedEncoded) # debug
+    # print(solved) # debug
+    # print("done") # debug
+    return solvedEncoded
 
 # raise NotImplementedError()
 
 # CHECKING environment:
-sudoku = np.load(veLPath)
+sudoku = np.load(vePath)
 # solutions = np.load(veSPath)
 # print()
 # print("First sudoku:")
