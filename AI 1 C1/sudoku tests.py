@@ -47,16 +47,16 @@ class Node: # so this'll just be a 1 or 0. it will connect to its column, to its
         self.l = self.r = self.u = self.d = self # they all point to themselves. will need to implement this somehow
         self.header = None # this will belong to a column, a constraint
         self.row = None # this is gonna be a pain in the arse.
-    def hrztCover(self): # the fact cover is remove and uncover is add feels weird goodness
+    def hrztDisconnect(self): # is cover disconnect? 
         self.l.r = self.r
         self.r.l = self.l
-    def vertCover(self):
+    def vertDisconnect(self): # i don't know i think i'll just name my own operations
         self.u.d = self.d
         self.d.u = self.u
-    def hrztUncover(self):
+    def hrztConnect(self):
         self.l.r = self
         self.r.l = self
-    def vertUncover(self):
+    def vertConnect(self):
         self.u.d = self
         self.d.u = self
 
@@ -73,12 +73,12 @@ class ColumnN(Node):
     # so these functions will be implemented now:
     def fullDisconnect (self): # algorithm x related
         # cover!
-        self.hrztCover()
+        self.hrztDisconnect()
         i = self.d
         while i != self:
             j = i.r
             while j != i: 
-                j.vertCover()
+                j.vertDisconnect()
                 j.header.length -= 1
                 j = j.r
             i = i.d
@@ -90,10 +90,10 @@ class ColumnN(Node):
             j = i.l
             while j != i: 
                 j.header.length += 1
-                j.vertUncover()
+                j.vertConnect()
                 j = j.l
             i = i.u
-        self.hrztUncover() # nothing has to be done here as the relation of course still exists
+        self.hrztConnect() # nothing has to be done here as the relation of course still exists
         
 class DLX:
     def __init__(self, columns):
