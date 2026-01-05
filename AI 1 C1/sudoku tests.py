@@ -1,7 +1,3 @@
-import numpy as np
-import time as t
-
-
 veLPath = "/home/bitchass/Documents/Homework/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/very_easy_puzzle.npy"
 eLPath = "/home/bitchass/Documents/Homework/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/easy_puzzle.npy"
 mLPath = "/home/bitchass/Documents/Homework/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/medium_puzzle.npy"
@@ -19,6 +15,9 @@ veSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-
 eSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/easy_solution.npy"
 mSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/medium_solution.npy"
 hSPath = "C:/Users/Omari/Documents/HOMEWORK AND EDUCATION!/uni/Exercise-Sheets-Year-1/AI 1 C1/sudoku/data/hard_solution.npy"
+
+import numpy as np
+import time as t
 
 """
     Input
@@ -46,8 +45,8 @@ class Node: # so this'll just be a 1 or 0. it will connect to its column, to its
     def __init__ (self):
         self.l = self.r = self.u = self.d = self # they all point to themselves. will need to implement this somehow
         self.header = None # this will belong to a column, a constraint
-        self.row = None # this is gonna be a pain in the arse.
-    def hrztDisconnect(self): # is cover disconnect? 
+        self.row = None
+    def hrztDisconnect(self): # is cover disconnect?  well not disconnect, but kinda
         self.l.r = self.r
         self.r.l = self.l
     def vertDisconnect(self): # i don't know i think i'll just name my own operations
@@ -67,10 +66,9 @@ class ColumnN(Node):
         self.length = 0
         self.header = self # just points to itself until it has a 1 in itself, i think.
     
-    # a column is the exact same as every other node, so you don't have to worry about changing anything, however
-    # in KAX, there's tons of partial solutions nad backtracking going on, so for the majority of the time 
-    # the idea of columns being fully covered and uncovered all the time's an important aspect to include
-    # so these functions will be implemented now:
+    # a column is the exact same as every other node, so you don't have to worry about changing anything
+    # though of course to form partial solutions within KAX you must wholly disconnect 
+    # without then severing the ACTUAL connection and vice versa
     def fullDisconnect (self): # algorithm x related
         # cover!
         self.hrztDisconnect()
@@ -111,9 +109,9 @@ class DLX:
             self.cRHeader.l = tempCol # loop root around
     
     def addRow (self, rowN, colConns):
-        nodesToLink = [] # to link later
+        nodesToLink = []
         for c in colConns:
-            curCol = self.cRCols[c] # seek dictionary
+            curCol = self.cRCols[c] # seek dictionary entry
             curNode = Node()
 
             curNode.header = curCol
@@ -148,18 +146,18 @@ class DLX:
     
     def KAX(self, solution):
         # base cases
-        if self.cRHeader.r == self.cRHeader: # this is when a solution's reached, ideally
+        if self.cRHeader.r == self.cRHeader: 
             return solution[:] # why doesn't pass by value exist 
         
         curCol = self.mrvHeuristic()
         if curCol.length == 0:
-            return None # break out
+            return None # break out, nothing in front
         
         curCol.fullDisconnect()
 
         curRow = curCol.d
         while curRow != curCol:
-            solution.append(curRow.row) # get the names, will have to reencode properly but this is easiest way of getting all IDs
+            solution.append(curRow.row) # dont forget to reencode
 
             coverNodes = curRow.r
             while coverNodes != curRow:
@@ -171,14 +169,15 @@ class DLX:
                 curCol.fullConnect()
                 return nextSolution # reattach and then proceed with the next call
             
-            # this is the back tracking step: if we end up in an unrecoverable spot we just uncover again and the call stack breaks up until there's 
-            # a "next solution"
+            # back tracking step: if we end up in an unrecoverable spot we return nothing,
+            # the call stack goes one back and we just uncover again and the it continues to break up
+            # up until there's a "next solution"
             uncoverNodes = curRow.l
             while uncoverNodes != curRow:
                 uncoverNodes.header.fullConnect()
                 uncoverNodes = uncoverNodes.l 
             
-            solution.pop() # partial solution is approved so remove it
+            solution.pop()
             curRow = curRow.d
         curCol.fullConnect()
         return None
@@ -207,8 +206,8 @@ def sudoku_solver(sudoku):
     mainMatrix = DLX(totalColumns)
     for row in range(9):
         for col in range(9):
-                trueRow = row + 1 # actual one indexed
-                trueCol = col + 1 # don't forget that its zero indexed but you're handling it as one indexed
+                trueRow = row + 1 
+                trueCol = col + 1 
                 box = ((row // 3) * 3 + (col // 3)) + 1
                 num = sudoku[row][col]
                 if num != 0:
@@ -220,8 +219,8 @@ def sudoku_solver(sudoku):
                     fillConstraintCol = f"4{trueRow}{trueCol}"
                     mainMatrix.addRow(int(rowName), [int(rowConstraintCol), int(colConstraintCol), int(squareConstraintCol), int(fillConstraintCol)])
                 else:
-                    for i in range (1,10):
-                        num = i
+                    for i in range (1,10): # all possible placements, definitely could be optimised, but the algorthim's quick enough anyway
+                        num = i 
                         rowName = (f"{num}" + f"{trueRow}" + f"{trueCol}")
                         # print(f"inputting {rowName}") # debug
                         rowConstraintCol = f"1{trueRow}{num}"
@@ -236,16 +235,19 @@ def sudoku_solver(sudoku):
     # solved.sort() # only here for debug
     
     def encode(solved):
-        endSolved = np.zeros((9,9))
-        for p in solved:
-            converted = str(p)
-            # print(converted) # debug
-            endSolved[int(converted[1]) - 1][int(converted[2]) - 1] = int(converted[0])
-        return endSolved
+        if solved == None:
+            return np.full((9,9), -1, np.int8)
+        else:
+            endSolved = np.zeros((9,9), np.int8)
+            for p in solved:
+                converted = str(p)
+                # print(converted) # debug
+                endSolved[int(converted[1]) - 1][int(converted[2]) - 1] = int(converted[0])
+            return endSolved
 
     solvedEncoded = encode(solvedUnencoded)
 
-    print(solvedEncoded) # debug
+    # print(solvedEncoded) # debug
     # print(solved) # debug
     # print("done") # debug
     return solvedEncoded
@@ -253,15 +255,45 @@ def sudoku_solver(sudoku):
 # raise NotImplementedError()
 
 # CHECKING environment:
-sudoku = np.load(vePath)
+sudoku = np.load(veLPath)
+sudoku1 = np.load(eLPath)
+sudoku2 = np.load(mLPath)
+sudoku3 = np.load(hLPath)
 # solutions = np.load(veSPath)
 # print()
 # print("First sudoku:")
-print(sudoku[0], "\n")
+# print(sudoku[0], "\n")
 # print("Solution of first sudoku:")
 # print(solutions[0])
 
-startTime = t.process_time()
-sudoku_solver(sudoku[0])
-endTime = t.process_time()
-print(endTime - startTime)
+totalTime = 0
+
+for i in range(len(sudoku)):
+    startTime = t.process_time()
+    sudoku_solver(sudoku[i])
+    endTime = t.process_time()
+    print(endTime - startTime)
+    totalTime += (endTime - startTime)
+
+for i in range(len(sudoku1)):
+    startTime = t.process_time()
+    sudoku_solver(sudoku1[i])
+    endTime = t.process_time()
+    print(endTime - startTime)
+    totalTime += (endTime - startTime)
+
+for i in range(len(sudoku2)):
+    startTime = t.process_time()
+    sudoku_solver(sudoku2[i])
+    endTime = t.process_time()
+    print(endTime - startTime)
+    totalTime += (endTime - startTime)
+
+for i in range(len(sudoku3)):
+    startTime = t.process_time()
+    sudoku_solver(sudoku3[i])
+    endTime = t.process_time()
+    print(endTime - startTime)
+    totalTime += (endTime - startTime)
+
+print(f"total time: {totalTime}")
