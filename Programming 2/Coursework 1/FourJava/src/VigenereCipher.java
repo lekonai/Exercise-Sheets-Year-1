@@ -1,9 +1,7 @@
 import java.util.ArrayList;
-import java.nio.file.Files;
 import java.util.HashSet;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.IOException;
 
 public class VigenereCipher implements Cipher {
     // realistically this is a static class ?
@@ -47,49 +45,40 @@ public class VigenereCipher implements Cipher {
         return mainGrid.get(a).get(b);
     }
 
+    public ArrayList<ArrayList<String>> reformatTo2D(String[] arr){
+        ArrayList<ArrayList<String>> finalGrid = new ArrayList<>();
+        for (int i = 0; i < 26; i++){
+            ArrayList<String> current = new ArrayList<>(new ArrayList<>(Arrays.asList(arr).subList(i * 26, (i * 26) + 26)));
+            // lowkey so intuitive ???
+            finalGrid.add(current);
+        }
+        return finalGrid;
+    }
+
     public int charToIndex(String s){
         HashSet<String> alphabet = new HashSet<>(mainGrid.getFirst());
-
-        // make sure to return a funky ass number if what's given's not in the alphabet.
-        // then it'll signal not to change the plaintext
-
         return alphabet.contains(s) || alphabet.contains((s.toUpperCase())) ? s.toUpperCase().toCharArray()[0] - 65 : -1;
     }
-
+    // overload!
     public int charToIndex(char c){
         HashSet<String> alphabet = new HashSet<>(mainGrid.getFirst());
-        // make sure to return a funky ass number if what's given's not in the alphabet.
-        // then it'll signal not to change the plaintext
         String actualCharacter = String.valueOf(c).toUpperCase();
-        boolean indexable;
-        if (alphabet.contains(actualCharacter)){
-            indexable = true;
-        }
-        else {
-            indexable = false;
 
-            System.out.println("False spotted"); // debug
-        }
-        return indexable ? actualCharacter.toCharArray()[0] - 65 : -1;
-    }
-
-
-    public ArrayList<ArrayList<String>> reformatTo2D(String[] arr){
-//        ArrayList<ArrayList<String>> returnArray = new ArrayList<>();
-//        for (int i = 0; i < 26; i++){
-//            ArrayList<String> current = new ArrayList<>(i * 26, (i * 26) + 26);
-//        }
-//        return returnArray;
+        return alphabet.contains(actualCharacter) ? actualCharacter.toCharArray()[0] - 65 : -1;
     }
 
     public String encryptionProcess(String plaintext, String key){
         StringBuilder sb = new StringBuilder();
+        key = formatKey(key, plaintext.length());
         for (int i = 0; i < plaintext.length(); i++){
+
             int num1 = charToIndex(plaintext.charAt(i));
-            System.out.println(String.valueOf(plaintext.charAt(i)) + num1);
+//            System.out.println(String.valueOf(plaintext.charAt(i)) + num1); // debug
+
             int num2 = charToIndex(key.charAt(i));
-            System.out.println(String.valueOf(plaintext.charAt(i)) + num2);
-            if (num1 != -1 || num2 != -1){
+//            System.out.println(String.valueOf(key.charAt(i)) + num2); // debug
+
+            if (num1 != -1 && num2 != -1){
                 sb.append(accessGrid(num1, num2));
             }
             else {
@@ -103,31 +92,41 @@ public class VigenereCipher implements Cipher {
         StringBuilder finalString = new StringBuilder();
         Path msgPath = Paths.get(message_filename);
         Path keyPath = Paths.get(key_filename);
-//        String toEncrypt = "", keys = "";
-//        try {
-//            toEncrypt = new String(Files.readAllBytes(msgPath));
-//        } catch (IOException e) {
-//            System.out.println("DONE");
-//        }
-//        try {
-//            keys = new String(Files.readAllBytes(keyPath));
-//        } catch (IOException e) {
-//            System.out.println("DONE");
-//        }
-//        System.out.println(toEncrypt);
-//        System.out.println(keys);
-//        for (int i = 0; i < toEncrypt.size(); i++) {
+        String toEncrypt = "", keys = "";
+        // readalllines just never works so im not using that
+//        BufferedReader reading = new BufferedReader(new FileReader(msgPath));
+
+        System.out.println(toEncrypt);
+        System.out.println(keys);
+//        for (int i = 0; i < toEncrypt.length(); i++) {
 //
 //            // ideally some error checks should be made before this, some basic ones like checking
 //            // the lengths and the keyPath
 //            // there should also be a KEY WRAPPER.
 //            // keep that in mind
-//            finalString.append(encryptionProcess(toEncrypt.get(i), keys.get(i)));
+//            // finalString.append(encryptionProcess(toEncrypt.get(i), keys.get(i)));
 //        }
 
-//        return finalString.toString();
+        return finalString.toString();
 
-        return " ";
+//        return " "; // debug
+    }
+
+    public String formatKey(String key, int ptLength){
+        StringBuilder wrap = new StringBuilder();
+        for (int i = 0; i < ptLength; i++){
+            wrap.append(key.toCharArray()[i % key.length()]);
+        }
+        // the uppercase technically isn't necessary for this but it'll be best if you're to view this method independently
+        return reverse(wrap.toString()).toUpperCase();
+    }
+
+    private String reverse(String key){
+        StringBuilder rev = new StringBuilder();
+        for (int i = key.length() - 1; i >= 0; i--){
+            rev.append(key.toCharArray()[i]);
+        }
+        return rev.toString();
     }
 
     @Override
@@ -153,13 +152,14 @@ void main() {
 
     VigenereCipher vCi = new VigenereCipher();
 
-//    ArrayList<ArrayList<String>> curr = vCi.retrieveGrid();
-    System.out.println(vCi.accessGrid(0,25));
+//    ArrayList<ArrayList<String>> curr = vCi.retrieveGrid(); // debug
     System.out.println(vCi.retrieveGrid());
-    System.out.println(vCi.accessGrid(11,15));
+//    System.out.println(vCi.accessGrid(0,25)); // debug
+//    System.out.println(vCi.accessGrid(11,15)); // debug
+//    System.out.println(vCi.retrieveGrid().getFirst()); // this is the alphabet
+//    System.out.println(vCi.charToIndex("a")); // debug
 
-//    System.out.println(vCi.retrieveGrid().getFirst());
-//    System.out.println(vCi.charToIndex("a"));
-    vCi.encrypt("encrypt_check.txt","key_check.txt");
-    vCi.encryptionProcess("HEllo", "KEv1n");
+//    vCi.encrypt("encrypt_check.txt","key_check.txt");
+    System.out.println(vCi.encryptionProcess("HEllo my Name is Kevin", "TedBrun")); // debug
+
 }
