@@ -87,25 +87,41 @@ public class VigenereCipher implements Cipher {
         }
         return sb.toString();
     }
+
     @Override // makes sure its all okay ! :)
     public String encrypt(String message_filename, String key_filename) {
         StringBuilder finalString = new StringBuilder();
-        Path msgPath = Paths.get(message_filename);
-        Path keyPath = Paths.get(key_filename);
         String toEncrypt = "", keys = "";
         // readalllines just never works so im not using that
-//        BufferedReader reading = new BufferedReader(new FileReader(msgPath));
 
         System.out.println(toEncrypt);
         System.out.println(keys);
-//        for (int i = 0; i < toEncrypt.length(); i++) {
-//
-//            // ideally some error checks should be made before this, some basic ones like checking
-//            // the lengths and the keyPath
-//            // there should also be a KEY WRAPPER.
-//            // keep that in mind
-//            // finalString.append(encryptionProcess(toEncrypt.get(i), keys.get(i)));
-//        }
+        Scanner encScr = null, keyScr = null;
+        try {
+            encScr = new Scanner(new File(message_filename).getAbsoluteFile());
+        }
+        catch (FileNotFoundException e){
+            System.out.println("Exception thrown");
+        }
+        try {
+            keyScr = new Scanner(new File(key_filename).getAbsoluteFile());
+        }
+        catch (FileNotFoundException e){
+            System.out.println("Exception thrown");
+        }
+
+        while (encScr.hasNextLine()){
+            toEncrypt += encScr.nextLine();
+        }
+        encScr.close();
+        while (keyScr.hasNextLine()){
+            keys += keyScr.nextLine();
+        }
+        keyScr.close();
+
+        System.out.println(toEncrypt);
+        System.out.println(keys);
+
 
         return finalString.toString();
 
@@ -138,6 +154,33 @@ public class VigenereCipher implements Cipher {
 
         return "";
     }
+
+    public String decryptionProcess(String ciphertext, String key){
+        StringBuilder dc = new StringBuilder();
+        key = formatKey(key, ciphertext.length());
+//        main concern with this is that what if a fully formatted key's already been given?
+        for (int i = 0; i < ciphertext.length(); i++){
+
+            char letter = ciphertext.charAt(i);
+
+            int keyIndex = charToIndex(key.charAt(i));
+//            System.out.println(String.valueOf(key.charAt(i)) + keyIndex); // debug
+
+            if (charToIndex(ciphertext.charAt(i)) != -1 && keyIndex != -1){
+                dc.append(retrieveGrid().getFirst().get(retrieveGrid().get(keyIndex).indexOf(String.valueOf(letter))));
+                // very convoluted piece of code here let me break it down for you:
+                /*
+                - get the first row of the grid (the alphabet)
+                - get the index of the letter of the cipher text on the row of the key's letter
+                - that index is then used on the alphabet as the ciphertext's letter will be the column
+                 */
+            }
+            else {
+                dc.append(ciphertext.toCharArray()[i]);
+            }
+        }
+        return dc.toString();
+    }
 }
 
 void main() {
@@ -153,13 +196,14 @@ void main() {
     VigenereCipher vCi = new VigenereCipher();
 
 //    ArrayList<ArrayList<String>> curr = vCi.retrieveGrid(); // debug
-    System.out.println(vCi.retrieveGrid());
+//    System.out.println(vCi.retrieveGrid()); // debug
 //    System.out.println(vCi.accessGrid(0,25)); // debug
 //    System.out.println(vCi.accessGrid(11,15)); // debug
 //    System.out.println(vCi.retrieveGrid().getFirst()); // this is the alphabet
 //    System.out.println(vCi.charToIndex("a")); // debug
 
-//    vCi.encrypt("encrypt_check.txt","key_check.txt");
+    vCi.encrypt("encrypt_check.txt","key_check.txt");
     System.out.println(vCi.encryptionProcess("HEllo my Name is Kevin", "TedBrun")); // debug
+    System.out.println(vCi.decryptionProcess("ARFCP QR HRNH BF BFYMG", "TedBrun"));
 
 }
