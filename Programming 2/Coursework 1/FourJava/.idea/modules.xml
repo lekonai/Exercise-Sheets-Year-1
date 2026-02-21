@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/FourJava.iml" filepath="$PROJECT_DIR$/FourJava.iml" />
-      <module fileurl="file://$PROJECT_DIR$/FourJavaNextQ/FourJavaNextQ.iml" filepath="$PROJECT_DIR$/FourJavaNextQ/FourJavaNextQ.iml" />
     </modules>
   </component>
 </project>

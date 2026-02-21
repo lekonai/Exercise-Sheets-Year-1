@@ -1,9 +1,7 @@
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
-public static class VigenereCipher implements Cipher {
+public class VigenereCipher implements Cipher {
     // realistically this is a static class ?
     private final String vigSquareText = """
             A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
@@ -35,11 +33,9 @@ public static class VigenereCipher implements Cipher {
     private final ArrayList<ArrayList<String>> mainGrid = reformatTo2D(vigSquareText.split("\\s+"));
     // maybe would be more sensible to be using regular list rather than arraylist as it doesn't vary too much?
 
-    // debug
     public ArrayList<ArrayList<String>> retrieveGrid(){
         return mainGrid;
     }
-    // debug
 
     public String accessGrid(int a, int b){
         return mainGrid.get(a).get(b);
@@ -59,20 +55,16 @@ public static class VigenereCipher implements Cipher {
     public String encrypt(String message_filename, String key_filename) {
         String toEncrypt = readFile(message_filename);
         String keys = readFile(key_filename);
-        return encryptionProcess(toEncrypt, keys);
+        return encryptionProcess(toEncrypt, keys).toUpperCase(); // added a touppercase because everything needs to be uppercase...
     }
 
     @Override
     public String decrypt(String message_filename, String key_filename) {
         String toDecrypt = readFile(message_filename);
         String keys = readFile(key_filename);
-        return decryptionProcess(toDecrypt, keys);
+        return decryptionProcess(toDecrypt, keys).toUpperCase();
     }
 
-    public int charToIndex(String s){
-        HashSet<String> alphabet = new HashSet<>(mainGrid.getFirst());
-        return alphabet.contains(s) || alphabet.contains((s.toUpperCase())) ? s.toUpperCase().toCharArray()[0] - 65 : -1;
-    }
     // overload!
     public int charToIndex(char c){
         HashSet<String> alphabet = new HashSet<>(mainGrid.getFirst());
@@ -81,7 +73,6 @@ public static class VigenereCipher implements Cipher {
         return alphabet.contains(actualCharacter) ? actualCharacter.toCharArray()[0] - 65 : -1;
     }
 
-
     public String readFile(String fileN){
         StringBuilder output = new StringBuilder();
         File theFile = new File(fileN);
@@ -89,12 +80,10 @@ public static class VigenereCipher implements Cipher {
         try (Scanner reader = new Scanner(theFile)) {
             while (reader.hasNextLine()) {
                 String data = reader.nextLine() + " ";
-                System.out.println(data); // debug
                 output.append(data);
             }
         } catch (FileNotFoundException e) {
             System.out.println("The file wasn't found.");
-//            e.printStackTrace(); // debug
         }
         output.delete(output.length() - 1, output.length()); // this is a really finnicky manner of avoiding a whitespace at the end
         // but there's not much more i can do about it, because java doesn't have a way to format your stringbuilders. java man...
@@ -122,12 +111,9 @@ public static class VigenereCipher implements Cipher {
         StringBuilder sb = new StringBuilder();
         key = formatKey(key, plaintext.length());
         for (int i = 0; i < plaintext.length(); i++){
-
             int num1 = charToIndex(plaintext.charAt(i));
-//            System.out.println(String.valueOf(plaintext.charAt(i)) + num1); // debug
 
             int num2 = charToIndex(key.charAt(i));
-//            System.out.println(String.valueOf(key.charAt(i)) + num2); // debug
 
             if (num1 != -1 && num2 != -1){
                 sb.append(accessGrid(num1, num2));
@@ -148,7 +134,6 @@ public static class VigenereCipher implements Cipher {
             char letter = ciphertext.charAt(i);
 
             int keyIndex = charToIndex(key.charAt(i));
-//            System.out.println(String.valueOf(key.charAt(i)) + keyIndex); // debug
 
             if (charToIndex(ciphertext.charAt(i)) != -1 && keyIndex != -1){
                 dc.append(retrieveGrid().getFirst().get(retrieveGrid().get(keyIndex).indexOf(String.valueOf(letter))));
@@ -179,16 +164,6 @@ void main() {
 
     VigenereCipher vCi = new VigenereCipher();
 
-//    ArrayList<ArrayList<String>> curr = vCi.retrieveGrid(); // debug
-//    System.out.println(vCi.retrieveGrid()); // debug
-//    System.out.println(vCi.accessGrid(0,25)); // debug
-//    System.out.println(vCi.accessGrid(11,15)); // debug
-//    System.out.println(vCi.retrieveGrid().getFirst()); // this is the alphabet
-//    System.out.println(vCi.charToIndex("a")); // debug
-
     System.out.println(vCi.encrypt("src/encrypt_check.txt","src/key_check.txt"));
-//    System.out.println(vCi.encryptionProcess("HEllo my Name is Kevin", "TedBrun")); // debug
-//    System.out.println(vCi.decryptionProcess("ARFCP QR HRNH BF BFYMG", "TedBrun")); // debug
-//    System.out.println(vCi.decryptionProcess("DFT'K LBZSQT ZC IKFB KOLX TDJR! ATYKFNXYR KAU CWCA OM HEIE UXYNXBAIEZSU.", "programming")); // debug
 
 }
