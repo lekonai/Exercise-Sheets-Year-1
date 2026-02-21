@@ -3,7 +3,7 @@ import java.util.HashSet;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class VigenereCipher implements Cipher {
+public static class VigenereCipher implements Cipher {
     // realistically this is a static class ?
     private final String vigSquareText = """
             A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
@@ -55,6 +55,20 @@ public class VigenereCipher implements Cipher {
         return finalGrid;
     }
 
+    @Override
+    public String encrypt(String message_filename, String key_filename) {
+        String toEncrypt = readFile(message_filename);
+        String keys = readFile(key_filename);
+        return encryptionProcess(toEncrypt, keys);
+    }
+
+    @Override
+    public String decrypt(String message_filename, String key_filename) {
+        String toDecrypt = readFile(message_filename);
+        String keys = readFile(key_filename);
+        return decryptionProcess(toDecrypt, keys);
+    }
+
     public int charToIndex(String s){
         HashSet<String> alphabet = new HashSet<>(mainGrid.getFirst());
         return alphabet.contains(s) || alphabet.contains((s.toUpperCase())) ? s.toUpperCase().toCharArray()[0] - 65 : -1;
@@ -65,6 +79,43 @@ public class VigenereCipher implements Cipher {
         String actualCharacter = String.valueOf(c).toUpperCase();
 
         return alphabet.contains(actualCharacter) ? actualCharacter.toCharArray()[0] - 65 : -1;
+    }
+
+
+    public String readFile(String fileN){
+        StringBuilder output = new StringBuilder();
+        File theFile = new File(fileN);
+
+        try (Scanner reader = new Scanner(theFile)) {
+            while (reader.hasNextLine()) {
+                String data = reader.nextLine() + " ";
+                System.out.println(data); // debug
+                output.append(data);
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("The file wasn't found.");
+//            e.printStackTrace(); // debug
+        }
+        output.delete(output.length() - 1, output.length()); // this is a really finnicky manner of avoiding a whitespace at the end
+        // but there's not much more i can do about it, because java doesn't have a way to format your stringbuilders. java man...
+        return output.toString();
+    }
+
+    public String formatKey(String key, int ptLength){
+        StringBuilder wrap = new StringBuilder();
+        for (int i = 0; i < ptLength; i++){
+            wrap.append(key.toCharArray()[i % key.length()]);
+        }
+        // the uppercase technically isn't necessary for this but it'll be best if you're to view this method independently
+        return reverse(wrap.toString()).toUpperCase();
+    }
+
+    private String reverse(String key){
+        StringBuilder rev = new StringBuilder();
+        for (int i = key.length() - 1; i >= 0; i--){
+            rev.append(key.toCharArray()[i]);
+        }
+        return rev.toString();
     }
 
     public String encryptionProcess(String plaintext, String key){
@@ -86,73 +137,6 @@ public class VigenereCipher implements Cipher {
             }
         }
         return sb.toString();
-    }
-
-    @Override // makes sure its all okay ! :)
-    public String encrypt(String message_filename, String key_filename) {
-        StringBuilder finalString = new StringBuilder();
-        String toEncrypt = "", keys = "";
-        // readalllines just never works so im not using that
-
-        System.out.println(toEncrypt);
-        System.out.println(keys);
-        Scanner encScr = null, keyScr = null;
-        try {
-            encScr = new Scanner(new File(message_filename).getAbsoluteFile());
-        }
-        catch (FileNotFoundException e){
-            System.out.println("Exception thrown");
-        }
-        try {
-            keyScr = new Scanner(new File(key_filename).getAbsoluteFile());
-        }
-        catch (FileNotFoundException e){
-            System.out.println("Exception thrown");
-        }
-
-        while (encScr.hasNextLine()){
-            toEncrypt += encScr.nextLine();
-        }
-        encScr.close();
-        while (keyScr.hasNextLine()){
-            keys += keyScr.nextLine();
-        }
-        keyScr.close();
-
-        System.out.println(toEncrypt);
-        System.out.println(keys);
-
-
-        return finalString.toString();
-
-//        return " "; // debug
-    }
-
-    public String formatKey(String key, int ptLength){
-        StringBuilder wrap = new StringBuilder();
-        for (int i = 0; i < ptLength; i++){
-            wrap.append(key.toCharArray()[i % key.length()]);
-        }
-        // the uppercase technically isn't necessary for this but it'll be best if you're to view this method independently
-        return reverse(wrap.toString()).toUpperCase();
-    }
-
-    private String reverse(String key){
-        StringBuilder rev = new StringBuilder();
-        for (int i = key.length() - 1; i >= 0; i--){
-            rev.append(key.toCharArray()[i]);
-        }
-        return rev.toString();
-    }
-
-    @Override
-    public String decrypt(String message_filename, String key_filename) {
-//        StringBuilder finalString = new StringBuilder();
-//        List<String> toDecrypt = Files.readAllLines(Path.of(message_filename));
-//        List<String> keys = Files.readAllLines(key_filename);
-
-
-        return "";
     }
 
     public String decryptionProcess(String ciphertext, String key){
@@ -202,8 +186,9 @@ void main() {
 //    System.out.println(vCi.retrieveGrid().getFirst()); // this is the alphabet
 //    System.out.println(vCi.charToIndex("a")); // debug
 
-    vCi.encrypt("encrypt_check.txt","key_check.txt");
-    System.out.println(vCi.encryptionProcess("HEllo my Name is Kevin", "TedBrun")); // debug
-    System.out.println(vCi.decryptionProcess("ARFCP QR HRNH BF BFYMG", "TedBrun"));
+    System.out.println(vCi.encrypt("src/encrypt_check.txt","src/key_check.txt"));
+//    System.out.println(vCi.encryptionProcess("HEllo my Name is Kevin", "TedBrun")); // debug
+//    System.out.println(vCi.decryptionProcess("ARFCP QR HRNH BF BFYMG", "TedBrun")); // debug
+//    System.out.println(vCi.decryptionProcess("DFT'K LBZSQT ZC IKFB KOLX TDJR! ATYKFNXYR KAU CWCA OM HEIE UXYNXBAIEZSU.", "programming")); // debug
 
 }
