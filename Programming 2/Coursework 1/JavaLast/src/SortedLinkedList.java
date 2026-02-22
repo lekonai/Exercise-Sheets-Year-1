@@ -1,13 +1,22 @@
 public class SortedLinkedList implements SortedList {
-    boolean asc = false; // this is inherent, so maybe it should be inherently true.
-    boolean dsc = false;
-    Node initNode = new Node ("initNodeEmpty");
+    boolean asc = true; // this is inherent; the default. it is dsc when false
+    Node initNode = new Node ("initNode");
+    /*
+     considering you can't use lists etc. everything can be stored as a link to this one sole object.
+     the initial variable will always be changed to the first item added to a list, and as its sorted,
+     it should be changed to the first item, for convenience, but always making sure the initial node is this can
+     be a bit finicky.
+
+     wondering if it'd be lazy yet convenient to just make sure the initnode is just the last item if its
+     descending?
+    */
 
     @Override
     public int size() {
         // number of nodes in a linked list
-        String initialName = "";
         int counter = 1; // there'll always be one
+
+        String initialName = initNode.getString();
         Node curNode = initNode;
 
         while (true){
@@ -32,16 +41,22 @@ public class SortedLinkedList implements SortedList {
             // backwards
         }
 
-        return counter == 0 && initNode.getString().equals("initNodeEmpty") ? 0 : counter;
+        return counter == 1 && initNode.getString().equals("initNode") ? 0 : counter;
     }
 
     @Override
     public void add(String string) {
         // add a node with a string to the linked list (in the appropriate order)
-        if (size() == 1 && initNode.getString().equals("initNode")){
+        if (size() == 0){ // if its just init node
             initNode.setString(string);
         }
 
+        if (asc){
+
+        }
+        else{
+
+        }
 
 
         // to be implemented
@@ -49,36 +64,76 @@ public class SortedLinkedList implements SortedList {
 
     @Override
     public void add(Node node) {
-        if (size() == 1 && initNode.getString().equals("initNode")){
+        if (size() == 0){ // if its just init node
             initNode = node;
         }
-        Node curNode = initNode;
         else {
+            Node curNode = initNode;
+            boolean brk = false;
+            while (!brk){
+                int curEval = lowerOrUpper(curNode, node);
+                switch (curEval){
+                    case -2:
+                        curNode = curNode.getPrev();
+                        break;
+                    case -1:
+                        brk = true;
+                        break;
+                    case 0:
+                        brk = true;
+                        // swap out the pointers
 
+
+                        // ^^ here
+                        break;
+                    case 1:
+                        brk = true;
+                        break;
+                    case 2:
+                        curNode = curNode.getNext();
+                        break;
+                }
+            }
         }
 
         // to be implemented
     }
 
     // overload!
+    public int lowerOrUpper(Node n, String i){
+        int queryNode = n.getString().toCharArray()[0]; // there must be a more intuitive way about this?
+        int subjectNode = i.toCharArray()[0];
+        // variables purely there for format + pretty
+        return evaluate(n, queryNode, subjectNode);
+    }
+
+
+    public int lowerOrUpper(Node n, Node i){
+        int queryNode = n.getString().toCharArray()[0]; // there must be a more intuitive way about this?
+        int subjectNode = i.getString().toCharArray()[0];
+        // variables purely there for format + pretty
+        return evaluate(n, queryNode, subjectNode);
+    }
     // -2 = go a node previous
     // -1 = place on previous pointer
     // 0 = equivalence, so just swap out the pointers.
     // 1 = place on next pointer
     // 2 = go a node next
-    public int lowerOrUpper(Node n, String i){
-        if (n.getString().toCharArray()[0] > i.toCharArray()[0]){
-            if (n.getPrev() != null){
-                return -2;
-            }
-            else {
-                return -1;
-            }
+
+    // there is an issue here with the fact that a case where if there are two nodes
+    //
+    public int evaluate(Node n, int q, int s){
+        if (q > s){
+            if (n.getPrev() != null) { return -2; }
+            else { return -1; }
         }
-    }
-
-    public int lowerOrUpper(Node n, Node i){
-
+        else {
+            if (q < s) {
+                if (n.getNext() != null) { return 2; }
+                else { return 1; }
+            }
+            else { return 0; }
+        }
     }
 
     @Override
@@ -98,61 +153,149 @@ public class SortedLinkedList implements SortedList {
     @Override
     public Node get(int index) {
         // get the node at a given index
+        // exception bait: too little or invalid
 
+        // TO BE IMPLEMENTED
         return null;
     }
 
     @Override
     public boolean isPresent(String string) {
         // is the node present? given a string
+        if (size() == 0) { return false; }
 
-        return false;
+        Node curNode = initNode;
+        while (true){
+            if (asc){ // if ascending
+                if (curNode.getString().equals(string)) { return true; }
+                else{
+                    if (curNode.getNext() != null){
+                        curNode = curNode.getNext();
+                    }
+                    else { return false; }
+                }
+            }
+
+            if (!asc){ // if descending
+                if (curNode.getString().equals(string)) { return true; }
+                else{
+                    if (curNode.getPrev() != null){
+                        curNode = curNode.getPrev();
+                    }
+                    else { return false; }
+                }
+
+            }
+        }
     }
 
     @Override
     public boolean removeFirst() {
         // as it says
+        // exception bait: empty
+        if (size() == 0){
+            return false;
+        }
+        if (size() == 1){
+            initNode.setString("initNode"); // default / empty state.
+            return true;
+        }
 
+        // TO BE IMPLEMENTED
         return false;
     }
 
     @Override
     public boolean removeLast() {
         // as it says
+        // excception bait: empty
+        Node curNode = initNode;
+        if (size() == 0){
+            return false;
+        }
+        if (size() == 1){
+            initNode.setString("initNode");
+            return true;
+        }
 
-        return false;
+        while (true){
+            if (asc){
+                if (curNode.getNext() != null) {
+                    curNode = curNode.getNext();
+                }
+                else{
+                    curNode.getPrev().setNext(null);
+                    return true;
+                }
+            }
+            if (!asc){
+                if (curNode.getPrev() != null){
+                    curNode = curNode.getPrev();
+                }
+                else {
+                    curNode.getNext().setPrev(null);
+                    return true;
+                }
+            }
+        }
     }
 
     @Override
     public boolean remove(int index) {
         // as it says
+        // exception bait: not present
+        if (get(index) == null){
+            return false;
+        }
 
-        return false;
+
+        // TO BE IMPLEMENTED
+
+
+
+        return true; // a boolean ? really?? what is this lol
     }
 
     @Override
     public boolean remove(String string) {
         // as it says
+        // exception bait: not present
+        if (!isPresent(string)){
+            return false;
+        }
 
-        return false;
+        // TO BE IMPLEMENTED
+
+        return true;
     }
 
+    // these are the two that determine the order in which everything else goes
     @Override
     public void orderAscending() {
         // as it says
+        asc = true;
 
+        // TO BE IMPLEMENTED
     }
 
     @Override
     public void orderDescending() {
         // as it says
+        // all this will do is set the initnode to the end and change a variable that'll treat
+        // the list differently.
+        asc = false;
 
+        // TO BE IMPLEMENTED
     }
 
     @Override
     public void print() {
         // prints the ocntents of hte linked list in the specified alphabetical order
         // each node's string on a new line
+
+
+
+        // TO BE IMPLEMENTED
     }
 }
 
@@ -166,6 +309,9 @@ void main() {
     // you link them via the constructor
     // set string and get string set and get the name
     // same with set/get next/prev
+
+    /*
+    // messing about
     Node zee = new Node ("Z");
     Node ayy = new Node("A");
     Node bee = new Node("B");
@@ -173,6 +319,7 @@ void main() {
     zee.setNext(ayy);
     ayy.setNext(bee);
     bee.setPrev(ayy);
+     */
 
     SortedLinkedList sLL = new SortedLinkedList();
     System.out.println(sLL.size());
