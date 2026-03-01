@@ -109,6 +109,9 @@ public class VigenereCipher implements Cipher {
 
     public String encryptionProcess(String plaintext, String key){
         StringBuilder sb = new StringBuilder();
+        if (key.isEmpty()){
+            return null;
+        }
         key = formatKey(key, plaintext.length());
         for (int i = 0; i < plaintext.length(); i++){
             int num1 = charToIndex(plaintext.charAt(i));
@@ -127,8 +130,12 @@ public class VigenereCipher implements Cipher {
 
     public String decryptionProcess(String ciphertext, String key){
         StringBuilder dc = new StringBuilder();
+        if (key.isEmpty()){
+            return null;
+        }
         key = formatKey(key, ciphertext.length());
-//        main concern with this is that what if a fully formatted key's already been given?
+        // main concern with this is that what if a fully formatted key's already been given?
+        // probably unlikely because that's just not the key at that point
         for (int i = 0; i < ciphertext.length(); i++){
 
             char letter = ciphertext.charAt(i);
@@ -164,6 +171,11 @@ void main() {
 
     VigenereCipher vCi = new VigenereCipher();
 
-    System.out.println(vCi.encrypt("src/encrypt_check.txt","src/key_check.txt"));
+//    System.out.println(vCi.encrypt("src/encrypt_check.txt","src/key_check.txt"));
+
+    System.out.println(vCi.encryptionProcess("I've a brave heart! And, I love to say numbers; even all of them. 1, 2 and even 3. Those are my favourites :)", "Omar"));
+    System.out.println(vCi.decryptionProcess("W'VQ R NFRVQ YEMFK! OED, Z XCME HF EOP ZIDBQFJ; SMEZ RLX FF HYEY. 1, 2 MBU QJVN 3. FVFSQ RRQ DY TRVAIIIFSJ :) ", "Omar"));
+    System.out.println(vCi.decryptionProcess("yo what's up", "-1230-';.';,]")); // this shouldn't return null as it's not... null, basically
+    System.out.println(vCi.encryptionProcess("hello", ""));
 
 }

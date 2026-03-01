@@ -29,4 +29,5 @@ public static String redact(String content, String[] redactWords) {
 
 void main(){
     System.out.println(redact("These's quick, Brown,,,, fox!! . Laz-y ass dog", new String[]{"fox", "laZY", "dog"}));
+    System.out.println(redact("A B C, it's as easy as 1 2 3, as simple as do re mi, A B C, 1 2 3, baby you and me girl", new String[]{"1", "easy", "it's", "A", "a"}));
 }

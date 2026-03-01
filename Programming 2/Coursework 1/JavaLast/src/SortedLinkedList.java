@@ -57,11 +57,50 @@ public class SortedLinkedList implements SortedList {
         // to be implemented
     }
 
+    public boolean filter(Node node){
+        char[] nameArray = node.getString().toUpperCase().toCharArray();
+        for (char Char : nameArray){
+            if (Char < 65 || Char > 90){
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public void add(Node node) {
         if (size() == 0){ // if its just init node
             initNode = node;
         }
+        if (!filter(node)){
+            return; // close the stack because then there's a non-alphabetic character within
+        }
+        if (node.getNext() != null || node.getPrev() != null){
+            if (node.getNext() != null && node.getPrev() == null){
+                node.getNext().setPrev(null);
+
+                add(node.getNext());
+                node.setNext(null);
+            }
+            else if (node.getPrev() != null && node.getNext() == null){
+                node.getPrev().setNext(null);
+
+                add(node.getPrev());
+                node.setPrev(null);
+            }
+            else {
+                node.getPrev().setNext(null);
+                node.getNext().setPrev(null);
+
+                add(node.getPrev());
+                add(node.getNext());
+                node.setPrev(null);
+                node.setNext(null);
+            }
+        }
+
+
+
         else {
             Node curNode = initNode;
             boolean brk = false;
@@ -488,42 +527,31 @@ void main() {
     // set string and get string set and get the name
     // same with set/get next/prev
 
-    /*
-    // messing about
-    Node zee = new Node ("Z");
-    Node ayy = new Node("A");
-    Node bee = new Node("B");
-    ayy.setPrev(zee); // bit tedious that it doesnt set both ways, you've to manually do it
-    zee.setNext(ayy);
-    ayy.setNext(bee);
-    bee.setPrev(ayy);
-     */
-
+    Node jay = new Node("J");
+    Node eff = new Node(jay, "F");
+    Node emm = new Node("M", eff);
+    jay.setNext(eff);
+    jay.setPrev(emm);
     SortedLinkedList sLL = new SortedLinkedList();
 
     System.out.println(sLL.size());
     sLL.add("Z");
-    sLL.add("D");
+    sLL.add("L");
+    sLL.add("what's uppppppp");
+    sLL.add("hi!");
+    sLL.add("hello");
+    sLL.add("bartholomew");
+    sLL.add("1");
     sLL.add("C");
     sLL.add("A");
     sLL.add("a"); // lowercases happen to be an issue
     sLL.add("B");
     sLL.add("j");
     sLL.add("Y");
+    sLL.add(jay);
     sLL.print();
 //    System.out.println(sLL.size());
     System.out.println();
-
-    sLL.remove("fart");
-    sLL.orderDescending();
-    sLL.remove("Z");
-    sLL.print();
-//    sLL.removeFirst();
-//    sLL.print();
-
-//    System.out.println(sLL.isPresent("B"));
-//    System.out.println(sLL.isPresent("J"));
-//    System.out.println(sLL.getFirst().getString());
 
 
 }
