@@ -14,6 +14,8 @@ public class CustomSort implements SortingInterface {
         // what is a gap ?
         // values are already defined within the class
 
+        // can't edit. remember
+
         ArrayList<Integer> temp = new ArrayList<>();
         ArrayList<Integer> gaps = new ArrayList<>();
         int n = values.size();
@@ -44,11 +46,12 @@ public class CustomSort implements SortingInterface {
         else{
             values.remove(index);
         }
-        sort(); // surely this is it for add and remove?
+        sort();
     }
 
     public void sort(){
         // sorts arraylist in ascending order
+        // can't edit. remember
         int n = values.size();
         ArrayList<Integer> gaps = getGaps();
         for (Integer gap : gaps){

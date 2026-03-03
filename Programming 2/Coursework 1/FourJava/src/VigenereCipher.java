@@ -1,35 +1,35 @@
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Arrays;
 
 public class VigenereCipher implements Cipher {
     // realistically this is a static class ?
-    private final String vigSquareText = """
-            A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
-            B C D E F G H I J K L M N O P Q R S T U V W X Y Z A
-            C D E F G H I J K L M N O P Q R S T U V W X Y Z A B
-            D E F G H I J K L M N O P Q R S T U V W X Y Z A B C
-            E F G H I J K L M N O P Q R S T U V W X Y Z A B C D
-            F G H I J K L M N O P Q R S T U V W X Y Z A B C D E
-            G H I J K L M N O P Q R S T U V W X Y Z A B C D E F
-            H I J K L M N O P Q R S T U V W X Y Z A B C D E F G
-            I J K L M N O P Q R S T U V W X Y Z A B C D E F G H
-            J K L M N O P Q R S T U V W X Y Z A B C D E F G H I
-            K L M N O P Q R S T U V W X Y Z A B C D E F G H I J
-            L M N O P Q R S T U V W X Y Z A B C D E F G H I J K
-            M N O P Q R S T U V W X Y Z A B C D E F G H I J K L
-            N O P Q R S T U V W X Y Z A B C D E F G H I J K L M
-            O P Q R S T U V W X Y Z A B C D E F G H I J K L M N
-            P Q R S T U V W X Y Z A B C D E F G H I J K L M N O
-            Q R S T U V W X Y Z A B C D E F G H I J K L M N O P
-            R S T U V W X Y Z A B C D E F G H I J K L M N O P Q
-            S T U V W X Y Z A B C D E F G H I J K L M N O P Q R
-            T U V W X Y Z A B C D E F G H I J K L M N O P Q R S
-            U V W X Y Z A B C D E F G H I J K L M N O P Q R S T
-            V W X Y Z A B C D E F G H I J K L M N O P Q R S T U
-            W X Y Z A B C D E F G H I J K L M N O P Q R S T U V
-            X Y Z A B C D E F G H I J K L M N O P Q R S T U V W
-            Y Z A B C D E F G H I J K L M N O P Q R S T U V W X
-            Z A B C D E F G H I J K L M N O P Q R S T U V W X Y""";
+    private final String vigSquareText = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z\n" +
+            "B C D E F G H I J K L M N O P Q R S T U V W X Y Z A\n" +
+            "C D E F G H I J K L M N O P Q R S T U V W X Y Z A B\n" +
+            "D E F G H I J K L M N O P Q R S T U V W X Y Z A B C\n" +
+            "E F G H I J K L M N O P Q R S T U V W X Y Z A B C D\n" +
+            "F G H I J K L M N O P Q R S T U V W X Y Z A B C D E\n" +
+            "G H I J K L M N O P Q R S T U V W X Y Z A B C D E F\n" +
+            "H I J K L M N O P Q R S T U V W X Y Z A B C D E F G\n" +
+            "I J K L M N O P Q R S T U V W X Y Z A B C D E F G H\n" +
+            "J K L M N O P Q R S T U V W X Y Z A B C D E F G H I\n" +
+            "K L M N O P Q R S T U V W X Y Z A B C D E F G H I J\n" +
+            "L M N O P Q R S T U V W X Y Z A B C D E F G H I J K\n" +
+            "M N O P Q R S T U V W X Y Z A B C D E F G H I J K L\n" +
+            "N O P Q R S T U V W X Y Z A B C D E F G H I J K L M\n" +
+            "O P Q R S T U V W X Y Z A B C D E F G H I J K L M N\n" +
+            "P Q R S T U V W X Y Z A B C D E F G H I J K L M N O\n" +
+            "Q R S T U V W X Y Z A B C D E F G H I J K L M N O P\n" +
+            "R S T U V W X Y Z A B C D E F G H I J K L M N O P Q\n" +
+            "S T U V W X Y Z A B C D E F G H I J K L M N O P Q R\n" +
+            "T U V W X Y Z A B C D E F G H I J K L M N O P Q R S\n" +
+            "U V W X Y Z A B C D E F G H I J K L M N O P Q R S T\n" +
+            "V W X Y Z A B C D E F G H I J K L M N O P Q R S T U\n" +
+            "W X Y Z A B C D E F G H I J K L M N O P Q R S T U V\n" +
+            "X Y Z A B C D E F G H I J K L M N O P Q R S T U V W\n" +
+            "Y Z A B C D E F G H I J K L M N O P Q R S T U V W X\n" +
+            "Z A B C D E F G H I J K L M N O P Q R S T U V W X Y";
     private final ArrayList<ArrayList<String>> mainGrid = reformatTo2D(vigSquareText.split("\\s+"));
     // maybe would be more sensible to be using regular list rather than arraylist as it doesn't vary too much?
 
@@ -55,6 +55,7 @@ public class VigenereCipher implements Cipher {
     public String encrypt(String message_filename, String key_filename) {
         String toEncrypt = readFile(message_filename);
         String keys = readFile(key_filename);
+        if (toEncrypt == null || keys == null) { return null; }
         return encryptionProcess(toEncrypt, keys).toUpperCase(); // added a touppercase because everything needs to be uppercase...
     }
 
@@ -62,12 +63,13 @@ public class VigenereCipher implements Cipher {
     public String decrypt(String message_filename, String key_filename) {
         String toDecrypt = readFile(message_filename);
         String keys = readFile(key_filename);
+        if (toDecrypt == null || keys == null) { return null; }
         return decryptionProcess(toDecrypt, keys).toUpperCase();
     }
 
     // overload!
     public int charToIndex(char c){
-        HashSet<String> alphabet = new HashSet<>(mainGrid.getFirst());
+        HashSet<String> alphabet = new HashSet<>(mainGrid.get(0));
         String actualCharacter = String.valueOf(c).toUpperCase();
 
         return alphabet.contains(actualCharacter) ? actualCharacter.toCharArray()[0] - 65 : -1;
@@ -79,11 +81,11 @@ public class VigenereCipher implements Cipher {
 
         try (Scanner reader = new Scanner(theFile)) {
             while (reader.hasNextLine()) {
-                String data = reader.nextLine() + " ";
+                String data = reader.nextLine() + "\n";
                 output.append(data);
             }
         } catch (FileNotFoundException e) {
-            System.out.println("The file wasn't found.");
+            return null;
         }
         output.delete(output.length() - 1, output.length()); // this is a really finnicky manner of avoiding a whitespace at the end
         // but there's not much more i can do about it, because java doesn't have a way to format your stringbuilders. java man...
@@ -143,7 +145,7 @@ public class VigenereCipher implements Cipher {
             int keyIndex = charToIndex(key.charAt(i));
 
             if (charToIndex(ciphertext.charAt(i)) != -1 && keyIndex != -1){
-                dc.append(retrieveGrid().getFirst().get(retrieveGrid().get(keyIndex).indexOf(String.valueOf(letter))));
+                dc.append(retrieveGrid().get(0).get(retrieveGrid().get(keyIndex).indexOf(String.valueOf(letter))));
                 // very convoluted piece of code here let me break it down for you:
                 /*
                 - get the first row of the grid (the alphabet)

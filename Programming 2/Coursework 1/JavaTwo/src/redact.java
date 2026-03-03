@@ -1,15 +1,39 @@
 public static String redact(String content, String[] redactWords) {
-    // split alongside pattern with matcher
     // have to retain spaces or else it gets realllllyy finnicky to format later
     ArrayList<String> splitString = new ArrayList<>();
-    Matcher cond = Pattern.compile("\\s|[\\w-']+|[.,!?;:\"()]").matcher(content);
-    while (cond.find()) {
-        splitString.add(cond.group());
+    // nvm can't use regex, had a nice solution and now no more.
+
+    // split apart
+    int ctr = 0;
+    while (ctr < content.length()){
+        char curChar = content.charAt(ctr);
+        boolean wordCondition = Character.isLetterOrDigit(curChar);
+
+        if (Character.isWhitespace(curChar)){
+            splitString.add(String.valueOf(curChar));
+            ctr++;
+        }
+        else if (wordCondition){ // word collation
+            int wordStart = ctr;
+            while (ctr < content.length()){
+                char wordChar = content.charAt(ctr);
+                if (Character.isLetterOrDigit(wordChar) || wordChar == '\'' || wordChar == '-'){
+                    ctr++;
+                }
+                else { break; }
+            }
+            splitString.add(content.substring(wordStart, ctr));
+        }
+
+        else if (".,!?;:\\\"()".indexOf(curChar) != -1){
+            splitString.add(String.valueOf(curChar));
+            ctr++;
+        }
+
+        else { ctr++; }
     }
 
-    System.out.println(splitString); // debug
-
-    // find and replcae
+    // find and replace
     for (int i = 0; i < splitString.size(); i++){
         for (String word : redactWords) {
             if (splitString.get(i).equalsIgnoreCase(word)) {

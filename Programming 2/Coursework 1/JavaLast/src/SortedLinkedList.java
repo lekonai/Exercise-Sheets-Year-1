@@ -58,6 +58,9 @@ public class SortedLinkedList implements SortedList {
     }
 
     public boolean filter(Node node){
+        if (node == null){
+            return false;
+        }
         char[] nameArray = node.getString().toUpperCase().toCharArray();
         for (char Char : nameArray){
             if (Char < 65 || Char > 90){
@@ -98,9 +101,6 @@ public class SortedLinkedList implements SortedList {
                 node.setNext(null);
             }
         }
-
-
-
         else {
             Node curNode = initNode;
             boolean brk = false;
@@ -130,37 +130,7 @@ public class SortedLinkedList implements SortedList {
                         break;
                     case 0:
                         brk = true;
-                        // swap out the pointers
-
-                        System.out.println("THIS IS AN EQUAL: " + node.getString()); // debug
-
-                        if (asc){
-                            if (curNode.getNext() == null){
-                                curNode.setNext(node);
-                                node.setPrev(curNode);
-                            }
-                            else{
-                                node.setNext(curNode.getNext());
-                                curNode.getNext().setPrev(node);
-                                node.setPrev(curNode);
-                                curNode.setNext(node);
-                                // asdasdasd
-                            }
-                        }
-                        if (!asc){
-                            if (curNode.getPrev() == null){
-                                curNode.setPrev(node);
-                                node.setNext(curNode);
-                            }
-                            else{
-                                node.setPrev(curNode.getPrev());
-                                curNode.getPrev().setNext(node);
-                                node.setNext(curNode);
-                                curNode.setPrev(node);
-                            }
-                        }
-                        // TO IMPLEMENT;
-                        // ^^ here
+                        // nothing should be done if an equivalent is spotted
                         break;
                     case 1:
                         brk = true;
@@ -189,21 +159,15 @@ public class SortedLinkedList implements SortedList {
         // to be implemented
     }
 
-    // overload!
-    public int lowerOrUpper(Node n, String i){
-        int queryNode = n.getString().toUpperCase().toCharArray()[0]; // there must be a more intuitive way about this?
-        int subjectNode = i.toUpperCase().toCharArray()[0];
-        // variables purely there for format + pretty
-        return evaluate(n, queryNode, subjectNode);
-    }
-
+    // original
     public int lowerOrUpper(Node n, Node i){
-        int queryNode = n.getString().toUpperCase().toCharArray()[0]; // there must be a more intuitive way about this?
-        int subjectNode = i.getString().toUpperCase().toCharArray()[0];
+//        int queryNode = n.getString().toUpperCase().toCharArray()[0]; // there must be a more intuitive way about this?
+//        int subjectNode = i.getString().toUpperCase().toCharArray()[0];
+        String queryNode = n.getString();
+        String subjectNode = i.getString();
         // variables purely there for format + pretty
         return evaluate(n, queryNode, subjectNode);
     }
-
 
     // -3 = go a node previous
     // -2 = place on previous pointer, but the pointer's not null
@@ -215,14 +179,14 @@ public class SortedLinkedList implements SortedList {
 
     // there is an issue here with the fact that a case where if there are two nodes
     //
-    public int evaluate(Node n, int q, int s){
-        if (q > s){
-            if (n.getPrev() != null && n.getPrev().getString().toUpperCase().toCharArray()[0] > s) { return -3; }
+    public int evaluate(Node n, String q, String s){
+        if (q.compareToIgnoreCase(s) > 0){
+            if (n.getPrev() != null && n.getPrev().getString().compareToIgnoreCase(s) > 0) { return -3; }
             else if (n.getPrev() != null) { return -2; }
             else { return -1; }
         }
-        else if (q < s) {
-            if (n.getNext() != null && n.getNext().getString().toUpperCase().toCharArray()[0] < s) { return 3; }
+        else if (q.compareToIgnoreCase(s) < 0) {
+            if (n.getNext() != null && n.getNext().getString().compareToIgnoreCase(s) < 0) { return 3; }
             else if (n.getNext() != null) { return 2; }
             else { return 1; }
         }
@@ -249,11 +213,8 @@ public class SortedLinkedList implements SortedList {
         if (asc){
             while (true){
                 if (curNode.getNext() == null){
-//                    System.out.print("I'M GOING TO RETUNR " + curNode.getString()); // debug
                     return curNode;
                 }
-//                System.out.println(curNode.getString()); // dbeug
-
                 curNode = curNode.getNext();
             }
         }
@@ -313,8 +274,9 @@ public class SortedLinkedList implements SortedList {
 
         Node curNode = initNode;
         while (true){
-            if (asc){ // if ascending
-                if (curNode.getString().equals(string)) { return true; }
+            if (asc){
+                if (curNode.getString().equalsIgnoreCase(string)) { return true; }
+                // ignore the case because case seems to only be for formatting here
                 else{
                     if (curNode.getNext() != null){
                         curNode = curNode.getNext();
@@ -448,17 +410,12 @@ public class SortedLinkedList implements SortedList {
         int counter = 0;
         Node curNode = initNode;
         while (true){
-            if (curNode.getString().equals(string)){
+            if (curNode.getString().equalsIgnoreCase(string)){
                 return remove(counter);
             }
             curNode = asc ? curNode.getNext() : curNode.getPrev();
             counter++;
         }
-        // search
-
-        // call
-
-        // TO BE IMPLEMENTED
     }
 
     // these are the two that determine the order in which everything else goes
@@ -468,7 +425,6 @@ public class SortedLinkedList implements SortedList {
         if (!asc){
             initNode = getLast();
             asc = true;
-            System.out.println("THIS IS ASCENDING NOW"); // debug
         }
         // TO BE IMPLEMENTED
     }
@@ -479,9 +435,7 @@ public class SortedLinkedList implements SortedList {
         // all this will do is set the initnode to the end and change a variable that'll treat
         // the list differently.
         if (asc){
-//            System.out.println("we're descendingernely ++ " + getLast().getString()); // debug
             initNode = getLast();
-//            System.out.println("THIS IS DESCENDING NOW"); // debug
             asc = false;
         }
         // TO BE IMPLEMENTED
@@ -492,27 +446,15 @@ public class SortedLinkedList implements SortedList {
         // prints the ocntents of hte linked list in the specified alphabetical order
         // each node's string on a new line
         Node curNode = initNode;
-        if (asc){
-            while (curNode != null){
-                System.out.println(curNode.getString());
-                // debug zone
-                /*
-                String previous = curNode.getPrev() == null ? "null" : curNode.getPrev().getString();
-                String next = curNode.getNext() == null ? "null" : curNode.getNext().getString();
-
-                System.out.println("Pointers: " + previous + " " + next);
-                 */
-                // debug zone
+        while (curNode != null){
+            System.out.println(curNode.getString());
+            if (asc){
                 curNode = curNode.getNext();
             }
-        }
-        if (!asc){
-            while (curNode != null){
-                System.out.println(curNode.getString());
+            else {
                 curNode = curNode.getPrev();
             }
         }
-        // TO BE IMPLEMENTED
     }
 }
 
@@ -542,9 +484,10 @@ void main() {
     sLL.add("hello");
     sLL.add("bartholomew");
     sLL.add("1");
-    sLL.add("C");
+    sLL.add("c");
     sLL.add("A");
-    sLL.add("a"); // lowercases happen to be an issue
+    sLL.add("Burundi");
+    sLL.add("a"); // this should not be added because of A
     sLL.add("B");
     sLL.add("j");
     sLL.add("Y");
