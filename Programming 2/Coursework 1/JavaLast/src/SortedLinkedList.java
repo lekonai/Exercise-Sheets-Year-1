@@ -1,6 +1,6 @@
 public class SortedLinkedList implements SortedList {
     boolean asc = true; // this is inherent; the default. it is dsc when false
-    Node initNode = new Node ("initNode");
+    Node initNode = new Node ("nullInitNode");
     /*
      considering you can't use lists etc. everything can be stored as a link to this one sole object.
      the initial variable will always be changed to the first item added to a list, and as its sorted,
@@ -41,19 +41,21 @@ public class SortedLinkedList implements SortedList {
                 // backwards
             }
         }
-        return counter == 1 && initNode.getString().equals("initNode") ? 0 : counter;
+        return counter == 1 && initNode.getString().equals("nullInitNode") ? 0 : counter;
     }
 
     @Override
     public void add(String string) {
         // add a node with a string to the linked list (in the appropriate order)
+        if (string == null || string.equals("")){
+            return;
+        }
         if (size() == 0){ // if its just init node
             initNode.setString(string);
+            return;
         }
-        else{
-            Node newNode = new Node(string);
-            add(newNode);
-        }
+        Node newNode = new Node(string);
+        add(newNode);
         // to be implemented
     }
 
@@ -74,6 +76,7 @@ public class SortedLinkedList implements SortedList {
     public void add(Node node) {
         if (size() == 0){ // if its just init node
             initNode = node;
+            return;
         }
         if (!filter(node)){
             return; // close the stack because then there's a non-alphabetic character within
@@ -110,6 +113,7 @@ public class SortedLinkedList implements SortedList {
                 switch (curEval){
                     case -3:
                         curNode = curNode.getPrev();
+                        break;
                     case -2:
                         brk = true;
                         node.setPrev(curNode.getPrev());
@@ -140,7 +144,6 @@ public class SortedLinkedList implements SortedList {
                         if (!asc){
                             initNode = node;
                         }
-
                         break;
                     case 2:
                         brk = true;
@@ -234,7 +237,7 @@ public class SortedLinkedList implements SortedList {
         // get the node at a given index
         // im assuming its zero indexed
         // exception bait: too little or invalid
-        if (initNode.getString().equals("initNode")){
+        if (initNode.getString().equals("nullInitNode")){
             return null;
         }
         if (size() <= index || index < 0){
@@ -286,7 +289,7 @@ public class SortedLinkedList implements SortedList {
             }
 
             if (!asc){ // if descending
-                if (curNode.getString().equals(string)) { return true; }
+                if (curNode.getString().equalsIgnoreCase(string)) { return true; }
                 else{
                     if (curNode.getPrev() != null){
                         curNode = curNode.getPrev();
@@ -306,7 +309,7 @@ public class SortedLinkedList implements SortedList {
             return false;
         }
         if (size() == 1){
-            initNode.setString("initNode"); // default / empty state.
+            initNode.setString("nullInitNode"); // default / empty state.
             return true;
         }
 
@@ -319,8 +322,7 @@ public class SortedLinkedList implements SortedList {
             initNode.setNext(null);
         }
 
-        // TO BE IMPLEMENTED
-        return false;
+        return true;
     }
 
     @Override
@@ -332,7 +334,7 @@ public class SortedLinkedList implements SortedList {
             return false;
         }
         if (size() == 1){
-            initNode.setString("initNode");
+            initNode.setString("nullInitNode");
             return true;
         }
 

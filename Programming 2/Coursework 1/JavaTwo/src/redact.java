@@ -2,7 +2,13 @@ public static String redact(String content, String[] redactWords) {
     // have to retain spaces or else it gets realllllyy finnicky to format later
     ArrayList<String> splitString = new ArrayList<>();
     // nvm can't use regex, had a nice solution and now no more.
+    if ((content == null || content.equals("")) || redactWords == null){ // because isempty isn't supported.
+        return null;
+    }
 
+    if (redactWords.length == 0){
+        return content;
+    }
     // split apart
     int ctr = 0;
     while (ctr < content.length()){

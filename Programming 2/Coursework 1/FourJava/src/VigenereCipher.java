@@ -29,10 +29,10 @@ public class VigenereCipher implements Cipher {
             "W X Y Z A B C D E F G H I J K L M N O P Q R S T U V\n" +
             "X Y Z A B C D E F G H I J K L M N O P Q R S T U V W\n" +
             "Y Z A B C D E F G H I J K L M N O P Q R S T U V W X\n" +
-            "Z A B C D E F G H I J K L M N O P Q R S T U V W X Y";
+            "Z A B C D E F G H I J K L M N O P Q R S T U V W X Y"; // thing doesn't support
     private final ArrayList<ArrayList<String>> mainGrid = reformatTo2D(vigSquareText.split("\\s+"));
     // maybe would be more sensible to be using regular list rather than arraylist as it doesn't vary too much?
-
+    private final HashSet<String> alphabet = new HashSet<>(mainGrid.get(0));
     public ArrayList<ArrayList<String>> retrieveGrid(){
         return mainGrid;
     }
@@ -55,24 +55,22 @@ public class VigenereCipher implements Cipher {
     public String encrypt(String message_filename, String key_filename) {
         String toEncrypt = readFile(message_filename);
         String keys = readFile(key_filename);
-        if (toEncrypt == null || keys == null) { return null; }
-        return encryptionProcess(toEncrypt, keys).toUpperCase(); // added a touppercase because everything needs to be uppercase...
+        if (toEncrypt == null || keys == null) { return null; } // double robust here
+        return encryptionProcess(toEncrypt, keys) == null ? null : encryptionProcess(toEncrypt, keys).toUpperCase(); // added a touppercase because everything needs to be uppercase...
     }
 
     @Override
     public String decrypt(String message_filename, String key_filename) {
         String toDecrypt = readFile(message_filename);
         String keys = readFile(key_filename);
-        if (toDecrypt == null || keys == null) { return null; }
-        return decryptionProcess(toDecrypt, keys).toUpperCase();
+        if (toDecrypt == null || keys == null) { return null; } //
+        return decryptionProcess(toDecrypt, keys) == null ? null : decryptionProcess(toDecrypt, keys).toUpperCase(); // return nulls if they're ... null. nullpointerexception
     }
 
     // overload!
     public int charToIndex(char c){
-        HashSet<String> alphabet = new HashSet<>(mainGrid.get(0));
         String actualCharacter = String.valueOf(c).toUpperCase();
-
-        return alphabet.contains(actualCharacter) ? actualCharacter.toCharArray()[0] - 65 : -1;
+        return alphabet.contains(actualCharacter) ? actualCharacter.charAt(0) - 65 : -1;
     }
 
     public String readFile(String fileN){
@@ -85,6 +83,9 @@ public class VigenereCipher implements Cipher {
                 output.append(data);
             }
         } catch (FileNotFoundException e) {
+            return null;
+        }
+        if (output.length() <= 0){
             return null;
         }
         output.delete(output.length() - 1, output.length()); // this is a really finnicky manner of avoiding a whitespace at the end
@@ -174,10 +175,13 @@ void main() {
     VigenereCipher vCi = new VigenereCipher();
 
 //    System.out.println(vCi.encrypt("src/encrypt_check.txt","src/key_check.txt"));
-
-    System.out.println(vCi.encryptionProcess("I've a brave heart! And, I love to say numbers; even all of them. 1, 2 and even 3. Those are my favourites :)", "Omar"));
-    System.out.println(vCi.decryptionProcess("W'VQ R NFRVQ YEMFK! OED, Z XCME HF EOP ZIDBQFJ; SMEZ RLX FF HYEY. 1, 2 MBU QJVN 3. FVFSQ RRQ DY TRVAIIIFSJ :) ", "Omar"));
-    System.out.println(vCi.decryptionProcess("yo what's up", "-1230-';.';,]")); // this shouldn't return null as it's not... null, basically
+//    System.out.println(vCi.decrypt("src/decrypt_check.txt", "src/key_check.txt"));
+    System.out.println(vCi.encrypt("src/encrypt_check2.txt","src/key_check2.txt"));
+    System.out.println(vCi.decrypt("src/decrypt_check2.txt", "src/key_check2.txt"));
+//    System.out.println(vCi.encryptionProcess("I've a brave heart! And, I love to say numbers; even all of them. 1, 2 and even 3. Those are my favourites :)", "Omar"));
+//    System.out.println(vCi.decryptionProcess("W'VQ R NFRVQ YEMFK! OED, Z XCME HF EOP ZIDBQFJ; SMEZ RLX FF HYEY. 1, 2 MBU QJVN 3. FVFSQ RRQ DY TRVAIIIFSJ :)", "Omar"));
+//    System.out.println(vCi.decryptionProcess("yo what's up", "-1230-';.';,]")); // this shouldn't return null as it's not... null, basically
     System.out.println(vCi.encryptionProcess("hello", ""));
+    System.out.println(vCi.decryptionProcess("yooo", "]'];[./"));
 
 }

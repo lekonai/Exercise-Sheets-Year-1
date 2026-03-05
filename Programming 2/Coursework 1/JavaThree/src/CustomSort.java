@@ -5,6 +5,9 @@ public class CustomSort implements SortingInterface {
 
     public void setValues(ArrayList<Double> values){
         // sets and sorts the values provided in ascending order
+        if (values == null){
+            return;
+        }
         this.values = values; // remember its setting it not adding them all on
         sort();
     }
@@ -23,7 +26,8 @@ public class CustomSort implements SortingInterface {
         int i = 2;
         while (gap < n){
             temp.add(gap);
-            gap = (int)(Math.pow(2, i) - 1);
+//            gap = (int)(Math.pow(2, i) - 1);
+            gap = (2 << i) - 1;
             i++;
         }
         for (i = (temp.size() - 1); i >= 0; i--){
@@ -34,6 +38,9 @@ public class CustomSort implements SortingInterface {
 
     public void add(Double value){
         // adds a value to the sorted arraylist ! ! in ascending order ! !
+        if (value == null){
+            return;
+        }
         values.add(value);
         sort();
     }
@@ -42,10 +49,9 @@ public class CustomSort implements SortingInterface {
         // removes a value at the specified index from the sorted arraylist
         if (index < 0 || index >= values.size()){
             // silently ignore the edge case whatever
+            return;
         }
-        else{
-            values.remove(index);
-        }
+        values.remove(index);
         sort();
     }
 
