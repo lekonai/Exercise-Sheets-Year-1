@@ -1,6 +1,6 @@
 public class SortedLinkedList implements SortedList {
     boolean asc = true; // this is inherent; the default. it is dsc when false
-    Node initNode = new Node ("nullInitNode");
+    Node initNode = null;
     /*
      considering you can't use lists etc. everything can be stored as a link to this one sole object.
      the initial variable will always be changed to the first item added to a list, and as its sorted,
@@ -15,6 +15,9 @@ public class SortedLinkedList implements SortedList {
     public int size() {
         // number of nodes in a linked list
         int counter = 1; // there'll always be one
+        if (initNode == null){
+            return 0;
+        }
         Node curNode = initNode;
         if (asc){
             while (true){
@@ -41,7 +44,7 @@ public class SortedLinkedList implements SortedList {
                 // backwards
             }
         }
-        return counter == 1 && initNode.getString().equals("nullInitNode") ? 0 : counter;
+        return counter;
     }
 
     @Override
@@ -51,7 +54,7 @@ public class SortedLinkedList implements SortedList {
             return;
         }
         if (size() == 0){ // if its just init node
-            initNode.setString(string);
+            initNode = new Node(string);
             return;
         }
         Node newNode = new Node(string);
@@ -237,7 +240,7 @@ public class SortedLinkedList implements SortedList {
         // get the node at a given index
         // im assuming its zero indexed
         // exception bait: too little or invalid
-        if (initNode.getString().equals("nullInitNode")){
+        if (initNode == null){
             return null;
         }
         if (size() <= index || index < 0){
@@ -247,23 +250,17 @@ public class SortedLinkedList implements SortedList {
             return getFirst();
         }
         Node curNode = initNode;
-        if (asc){
-            while (true){
-                index -= 1;
-                curNode = curNode.getNext();
-                if (index == 0){
-                    return curNode;
-                }
-            }
-        }
 
-        else{
-            while (true){
-                index -= 1;
+        while (true){
+            index -= 1;
+            if (asc){
+                curNode = curNode.getNext();
+            }
+            else {
                 curNode = curNode.getPrev();
-                if (index == 0){
-                    return curNode;
-                }
+            }
+            if (index == 0){
+                return curNode;
             }
         }
 
@@ -309,7 +306,7 @@ public class SortedLinkedList implements SortedList {
             return false;
         }
         if (size() == 1){
-            initNode.setString("nullInitNode"); // default / empty state.
+            initNode = null; // default / empty state.
             return true;
         }
 
@@ -329,12 +326,12 @@ public class SortedLinkedList implements SortedList {
     public boolean removeLast() {
         // as it says
         // excception bait: empty
-        Node curNode = initNode;
-        if (size() == 0){
+        if (initNode == null){
             return false;
         }
+        Node curNode = initNode;
         if (size() == 1){
-            initNode.setString("nullInitNode");
+            initNode = null;
             return true;
         }
 
@@ -369,6 +366,10 @@ public class SortedLinkedList implements SortedList {
         }
 
         if (index == 0){
+            if (size() == 1){
+                initNode = null;
+                return true;
+            }
             initNode = asc ? initNode.getNext() : initNode.getPrev();
             if (asc){
                 initNode.setPrev(null);
