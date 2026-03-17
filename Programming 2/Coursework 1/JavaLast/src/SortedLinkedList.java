@@ -132,8 +132,6 @@ public class SortedLinkedList implements SortedList {
                         if (asc){
                             initNode = node;
                         }
-                        // dont forget to change initnode etc
-
                         break;
                     case 0:
                         brk = true;
@@ -167,8 +165,6 @@ public class SortedLinkedList implements SortedList {
 
     // original
     public int lowerOrUpper(Node n, Node i){
-//        int queryNode = n.getString().toUpperCase().toCharArray()[0]; // there must be a more intuitive way about this?
-//        int subjectNode = i.getString().toUpperCase().toCharArray()[0];
         String queryNode = n.getString();
         String subjectNode = i.getString();
         // variables purely there for format + pretty

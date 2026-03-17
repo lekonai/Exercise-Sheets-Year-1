@@ -26,8 +26,7 @@ public class CustomSort implements SortingInterface {
         int i = 2;
         while (gap < n){
             temp.add(gap);
-//            gap = (int)(Math.pow(2, i) - 1);
-            gap = (2 << i) - 1;
+            gap = (int)(Math.pow(2, i) - 1);
             i++;
         }
         for (i = (temp.size() - 1); i >= 0; i--){
