@@ -1,35 +1,19 @@
 import numpy as np
 
-training_spam = np.loadtxt(open("data/training_spam.csv"), delimiter=",")
-# print("Shape of the spam training data set:", training_spam.shape)
-# print(training_spam)
-
 def estimate_log_class_priors(data):
-    ttlEntries, ttlWidth = data.shape
+    ttlEntries, _ = data.shape
     ttlSpam = 0
-    accSpam = np.zeros(ttlWidth) # accumulations
-    accHam = np.zeros(ttlWidth) # ignore the first entry, as that'll be ham/spam accumulation
 
     for i in data:
         if i[0] == 1:
             ttlSpam += 1
-            for j in range(len(i)):
-                if i[j] == 1:
-                    accSpam[j] += 1
-        elif i[0] == 0:
-            for j in range(len(i)):
-                if i[j] == 1:
-                    accHam[j] += 1
-    
-    accAll = np.add(accSpam, accHam) # total words, this is w_i
-    accAll = accAll[1:]
 
     ttlHam = ttlEntries - ttlSpam
 
-    cSpam = ttlSpam / ttlEntries # p(C = 1)
-    cHam = ttlHam / ttlEntries # p(C = 0)
+    pHam = ttlHam / ttlEntries # p(C = 0)
+    pSpam = ttlSpam / ttlEntries # p(C = 1)
     
-    log_class_priors = np.array([np.log(cHam), np.log(cSpam)])
+    log_class_priors = np.array([np.log(pHam), np.log(pSpam)])
     return log_class_priors
 
 def probabilityWSmooth(arr, alph):
@@ -49,36 +33,22 @@ def probabilityWSmooth(arr, alph):
     # where k is the total amount of words (in this case, 54)
     return arr
 
+def logAll(arr):
+    # all this does is log all, in case you want the data without the logs this has been placed in a separate container
+    return np.array([np.log(x) for x in arr])
+
 def estimate_log_class_conditional_likelihoods(data, alpha=1.0):
-    """
-    Given a data set with binary response variable (0s and 1s) in the
-    left-most column and binary features (words), calculate the empirical
-    class-conditional likelihoods, that is,
-    log(P(w_i | c)) for all features w_i and both classes (c in {0, 1}).
-    
-    Assume a multinomial feature distribution and use Laplace smoothing
-    if alpha > 0.
-
-    :param data: a two-dimensional numpy-array with shape = [n_samples, 1 + n_features]
-
-    :return theta:
-        a numpy array of shape = [2, n_features]. theta[j, i] corresponds to the
-        logarithm of the probability of feature i appearing in a sample belonging 
-        to class j.
-    """
 
     # use laplace smoothing only when alpha > 0
     # Hint: many `numpy`-functions contain an `axis` argument. 
     # If you specify `axis=0`, you can perform column-wise (that is, feature-wise!) computations.
 
-    ttlEntries, ttlWidth = data.shape
-    ttlSpam = 0
-    accSpam = np.zeros(ttlWidth) # accumulations
+    _, ttlWidth = data.shape
     accHam = np.zeros(ttlWidth) # ignore the first entry, as that'll be ham/spam accumulation
+    accSpam = np.zeros(ttlWidth) # accumulations
 
     for i in data:
         if i[0] == 1:
-            ttlSpam += 1
             for j in range(len(i)):
                 if i[j] == 1:
                     accSpam[j] += 1
@@ -90,32 +60,55 @@ def estimate_log_class_conditional_likelihoods(data, alpha=1.0):
     accAll = np.add(accSpam, accHam) # total words, this is w_i
     accAll = accAll[1:]
 
-    ttlHam = ttlEntries - ttlSpam
+    # removing spam/ham value
+    probsHam = logAll(probabilityWSmooth(accHam[1:], 1))
+    probsSpam = logAll(probabilityWSmooth(accSpam[1:], 1))
 
-    cSpam = ttlSpam / ttlEntries # p(C = 1)
-    cHam = ttlHam / ttlEntries # p(C = 0)
-    # i don't have to use these yet
-    # probsSpam = probabilityWSmooth(accSpam[1:], 1) # removing spam/ham value
-    # probsHam = probabilityWSmooth(accHam[1:], 1)
-
-    # # calculate log class priors. i'm not sure what
-    # # the point of it is ?
-
-    # # p(C = 1)
-    # ttlSumS = 0;
-    # for i in range(len(probsSpam)):
-    #     ttlSumS += np.log(probsSpam[i]) * accAll[i]
-    
-    # # log(p(C = c)FULLPROD(wordGivenCond)^wordCount) 
-
-    # # p(C = 0)
-    # ttlSumH = 0;
-    # for i in range(len(probsHam)):
-    #     ttlSumH += np.log(probsHam[i]) * accAll[i]
-
-
+    theta = np.concat([[probsHam], [probsSpam]])
     return theta
+
+def predict(new_data, log_class_priors, log_class_conditional_likelihoods):
+    """
+    Given a new data set with binary features, predict the corresponding
+    response for each instance (row) of the new_data set.
+
+    :param new_data: a two-dimensional numpy-array with shape = [n_test_samples, n_features].
+    :param log_class_priors: the priors.
+    :param log_class_conditional_likelihoods: theta.
+    :return class_predictions: a numpy array containing the class predictions for each row
+        of new_data.
+    """
+
+    # so we just have features for this new_data.
+
+    # log ( p(C = c) ) + sum[totalTrainingWordCount * thetaCondWord]
+    entries, _ = new_data.shape
+    class_predictions = [] # is this optimal? i need to somehow initialise an array
+    for i in new_data:
+        ifHam = evaluate(i, log_class_priors[0], log_class_conditional_likelihoods[0])
+        ifSpam = evaluate(i, log_class_priors[1], log_class_conditional_likelihoods[1])
+        class_predictions += [1 if ifSpam > ifHam else 0]
+    
+    class_predictions = np.array(class_predictions)
+    return class_predictions # array of 0s and 1s
+
+def evaluate(email, logClassPrior, theta):
+    sum = 0
+    for i in range(len(email)):
+        if (email[i] == 1):
+            sum += theta[i]
+    return (logClassPrior + sum)
+
+
+###
+# RUNTIME
+training_spam = np.loadtxt(open("data/training_spam.csv"), delimiter=",")
+test_spam = np.loadtxt(open("data/testing_spam.csv"), delimiter=",")
 
 estimate_log_class_priors(training_spam)
 lCPs = estimate_log_class_priors(training_spam)
-print("result: ", lCPs)
+lCCL = estimate_log_class_conditional_likelihoods(training_spam)
+
+print(predict(test_spam[:, 1:], lCPs, lCCL))
+# RUNTIME
+###
