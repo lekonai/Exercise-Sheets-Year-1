@@ -1,6 +1,6 @@
 import numpy as np
 
-def estimate_log_class_priors(data):
+def getLogClassPriors(data):
     ttlEntries, _ = data.shape
     ttlSpam = 0
 
@@ -13,8 +13,8 @@ def estimate_log_class_priors(data):
     pHam = ttlHam / ttlEntries # p(C = 0)
     pSpam = ttlSpam / ttlEntries # p(C = 1)
     
-    log_class_priors = np.array([np.log(pHam), np.log(pSpam)])
-    return log_class_priors
+    logClassPriors = np.array([np.log(pHam), np.log(pSpam)])
+    return logClassPriors
 
 def probabilityWSmooth(arr, alph):
     alpha = alph
@@ -37,7 +37,7 @@ def logAll(arr):
     # all this does is log all, in case you want the data without the logs this has been placed in a separate container
     return np.array([np.log(x) for x in arr])
 
-def estimate_log_class_conditional_likelihoods(data, alpha=1.0):
+def getLogClassCondLikes(data, alpha=1.0):
 
     # use laplace smoothing only when alpha > 0
     # Hint: many `numpy`-functions contain an `axis` argument. 
@@ -67,30 +67,17 @@ def estimate_log_class_conditional_likelihoods(data, alpha=1.0):
     theta = np.concat([[probsHam], [probsSpam]])
     return theta
 
-def predict(new_data, log_class_priors, log_class_conditional_likelihoods):
-    """
-    Given a new data set with binary features, predict the corresponding
-    response for each instance (row) of the new_data set.
-
-    :param new_data: a two-dimensional numpy-array with shape = [n_test_samples, n_features].
-    :param log_class_priors: the priors.
-    :param log_class_conditional_likelihoods: theta.
-    :return class_predictions: a numpy array containing the class predictions for each row
-        of new_data.
-    """
-
-    # so we just have features for this new_data.
-
+def predict(new_data, logClassPriors, lgClsCondsLihoods):
     # log ( p(C = c) ) + sum[totalTrainingWordCount * thetaCondWord]
     entries, _ = new_data.shape
-    class_predictions = [] # is this optimal? i need to somehow initialise an array
+    predictions = [] # is this optimal? i need to somehow initialise an array
     for i in new_data:
-        ifHam = evaluate(i, log_class_priors[0], log_class_conditional_likelihoods[0])
-        ifSpam = evaluate(i, log_class_priors[1], log_class_conditional_likelihoods[1])
-        class_predictions += [1 if ifSpam > ifHam else 0]
+        ifHam = evaluate(i, logClassPriors[0], lgClsCondsLihoods[0])
+        ifSpam = evaluate(i, logClassPriors[1], lgClsCondsLihoods[1])
+        predictions += [1 if ifSpam > ifHam else 0]
     
-    class_predictions = np.array(class_predictions)
-    return class_predictions # array of 0s and 1s
+    predictions = np.array(predictions)
+    return predictions # array of 0s and 1s
 
 def evaluate(email, logClassPrior, theta):
     sum = 0
@@ -105,9 +92,9 @@ def evaluate(email, logClassPrior, theta):
 training_spam = np.loadtxt(open("data/training_spam.csv"), delimiter=",")
 test_spam = np.loadtxt(open("data/testing_spam.csv"), delimiter=",")
 
-estimate_log_class_priors(training_spam)
-lCPs = estimate_log_class_priors(training_spam)
-lCCL = estimate_log_class_conditional_likelihoods(training_spam)
+getLogClassPriors(training_spam)
+lCPs = getLogClassPriors(training_spam)
+lCCL = getLogClassCondLikes(training_spam)
 
 print(predict(test_spam[:, 1:], lCPs, lCCL))
 # RUNTIME
