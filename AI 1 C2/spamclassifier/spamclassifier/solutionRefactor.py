@@ -1,11 +1,11 @@
 import numpy as np
 from IPython.display import HTML,Javascript, display
 
-training_spam = np.loadtxt(open("data/training_spam.csv"), delimiter=",").astype(int)
+training_spam = np.loadtxt(open("./testingData/trainingdata.csv"), delimiter=",").astype(int)
 print("Shape of the spam training data set:", training_spam.shape)
 print(training_spam)
 
-testing_spam = np.loadtxt(open("data/testing_spam.csv"), delimiter=",").astype(int)
+testing_spam = np.loadtxt(open("./testingData/testdata.csv"), delimiter=",").astype(int)
 print("Shape of the spam testing data set:", testing_spam.shape)
 print(testing_spam)
 # This skeleton code simply classifies every input as ham
@@ -22,11 +22,15 @@ class SpamClassifier:
     priorH = 0;
 
     def __init__(self, k):
-        self.k = k # k will act as the handler for the training data if it can just be anything
+        self.k = k # k will hold the training data
         
     def train(self):
         self.priorS, self.priorH = self.getLogClassPriors(self.k)
-        self.classConditionalProbabilities = self.getLogClassCondLikes(self.k)
+        height, _ = self.k.shape
+        alpha = 1
+        if height > 100:
+            alpha = height / 100
+        self.classConditionalProbabilities = self.getLogClassCondLikes(self.k, alpha if alpha >= 1 else 1)
     
     def getLogClassPriors(self, data):
         ttlEntries, _ = data.shape
@@ -49,31 +53,23 @@ class SpamClassifier:
         arr = arr.copy()
         k = len(arr)
         wordCount = 0;
-        for i in range(k): # smoothened
+        for i in range(k): # smoothing
             arr[i] += alpha
             wordCount += arr[i]
 
-        for i in range(k): # div all and get probabilities. already conditional.
+        for i in range(k): # div all
             arr[i] /= wordCount
 
-        # smoothing process is:
-        # given word = n(c,w) + alpha / n(c) + kalpha
-        # where k is the total amount of words (in this case, 54)
         return arr
     
     def logAll(self, arr):
-        # all this does is log all, in case you want the data without the logs this has been placed in a separate container
         return np.array([np.log(x) for x in arr])
     
-    def getLogClassCondLikes(self, data, alpha=1.0):
-
-        # use laplace smoothing only when alpha > 0
-        # Hint: many `numpy`-functions contain an `axis` argument. 
-        # If you specify `axis=0`, you can perform column-wise (that is, feature-wise!) computations.
+    def getLogClassCondLikes(self, data, alpha):
         
         _, ttlWidth = data.shape
-        accHam = np.zeros(ttlWidth) # ignore the first entry, as that'll be ham/spam accumulation
-        accSpam = np.zeros(ttlWidth) # accumulations
+        accHam = np.zeros(ttlWidth)
+        accSpam = np.zeros(ttlWidth)
 
         for i in data:
             if i[0] == 1:
@@ -85,27 +81,25 @@ class SpamClassifier:
                     if i[j] == 1:
                         accHam[j] += 1
         
-        accAll = np.add(accSpam, accHam) # total words, this is w_i
+        accAll = np.add(accSpam, accHam)
         accAll = accAll[1:]
 
         # removing spam/ham value
-        probsHam = self.logAll(self.probabilityWSmooth(accHam[1:], 1))
-        probsSpam = self.logAll(self.probabilityWSmooth(accSpam[1:], 1))
+        probsHam = self.logAll(self.probabilityWSmooth(accHam[1:], alpha))
+        probsSpam = self.logAll(self.probabilityWSmooth(accSpam[1:], alpha))
 
         theta = np.concat([[probsHam], [probsSpam]])
         return theta
 
     def predict(self, new_data):
-        # log ( p(C = c) ) + sum[totalTrainingWordCount * thetaCondWord]
-        entries, _ = new_data.shape
-        predictions = [] # is this optimal? i need to somehow initialise an array
+        predictions = []
         for i in new_data:
             ifHam = self.evaluate(i, self.priorS, self.classConditionalProbabilities[0])
             ifSpam = self.evaluate(i, self.priorH, self.classConditionalProbabilities[1])
             predictions += [1 if ifSpam > ifHam else 0]
         
         predictions = np.array(predictions)
-        return predictions # array of 0s and 1s
+        return predictions
     
     def evaluate(self, email, logClassPrior, theta):
         sum = 0
@@ -121,3 +115,4 @@ def create_classifier():
     return classifier
 
 classifier = create_classifier()
+print(classifier.predict(testing_spam))
